@@ -1,0 +1,6 @@
+# Add your project dependencies here, one per line.
+# Example:
+numpy
+pandas
+scikit-learn
+opencv-python
