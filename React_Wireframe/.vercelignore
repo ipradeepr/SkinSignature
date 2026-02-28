@@ -9,3 +9,11 @@ backend/__pycache__
 backend/venv
 venv
 *.pyc
+
+# Frontend-only deploy: ignore Python/API artifacts
+api/
+backend/
+requirements.txt
+environment.yml
+render.yaml
+Procfile
