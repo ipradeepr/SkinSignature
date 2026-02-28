@@ -1,5 +1,5 @@
 import { useRef, useEffect, useMemo, useState, type FC } from "react";
-import { apiFetch } from "../config/api";
+import { apiFetch, parseApiError } from "../config/api";
 import CartridgeMarquee, { type Cartridge } from './CartridgeMarquee';
 
 // Add hex to Lipstick interface
@@ -758,7 +758,10 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
           finish
         })
       });
-      if (!response.ok) throw new Error('API request failed');
+      if (!response.ok) {
+        const detail = await parseApiError(response);
+        throw new Error(detail);
+      }
       const result = await response.json();
       if (result.success && result.processed_image) {
         setProcessedImage(result.processed_image);
@@ -770,8 +773,9 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
         setLipDetected(false);
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('Error applying lipstick:', error);
-      setErrorMessage('Failed to process image. Please ensure the backend is running.');
+      setErrorMessage(`Failed to process image: ${message}`);
       setProcessedImage(null);
       setLipDetected(false);
     } finally {

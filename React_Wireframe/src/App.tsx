@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import SkinSignaturePage from './components/SkinSignaturePage';
+import { apiUrl } from './config/api';
 
 function App() {
   const [view, setView] = useState<'home' | 'product'>('home');
   const [experienceType, setExperienceType] = useState<'store' | 'in-house'>('store');
   const [launchMode, setLaunchMode] = useState<'store' | 'cartridge' | 'in-house'>('store');
+  const healthViewUrl = apiUrl('/v1/health/view');
+  const healthJsonUrl = apiUrl('/v1/health');
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -174,6 +177,27 @@ function App() {
   return (
     <div className="App min-h-screen overflow-x-hidden">
       {view === 'home' ? renderHome() : <SkinSignaturePage experienceType={experienceType} launchMode={launchMode} onNavigateHome={() => setView('home')} />}
+      <div className="fixed bottom-3 right-3 z-40">
+        <div className="rounded-xl border border-[#bfa77a]/50 bg-white/90 backdrop-blur px-3 py-2 shadow-lg flex items-center gap-3">
+          <a
+            href={healthViewUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs font-semibold text-[#6d4c1e] hover:text-[#bfa77a] transition"
+          >
+            Health Dashboard
+          </a>
+          <span className="text-[#bfa77a]/70">|</span>
+          <a
+            href={healthJsonUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs font-semibold text-[#6d4c1e] hover:text-[#bfa77a] transition"
+          >
+            Raw JSON
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

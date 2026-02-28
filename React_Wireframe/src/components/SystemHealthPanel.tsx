@@ -1,5 +1,5 @@
 import { useEffect, useState, type FC } from 'react';
-import { apiFetch } from '../config/api';
+import { apiFetch, apiUrl } from '../config/api';
 
 type HealthDiagnostics = {
   opencv?: boolean;
@@ -27,6 +27,8 @@ const SystemHealthPanel: FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [health, setHealth] = useState<HealthResponse | null>(null);
+  const healthViewUrl = apiUrl('/v1/health/view');
+  const healthJsonUrl = apiUrl('/v1/health');
 
   const loadHealth = async () => {
     setLoading(true);
@@ -107,6 +109,26 @@ const SystemHealthPanel: FC = () => {
             <div className="flex items-center justify-between">
               <span>Mode</span>
               <span className="font-semibold text-[#bfa77a]">{diagnostics?.mode || 'unknown'}</span>
+            </div>
+
+            <div className="pt-2 mt-2 border-t border-[#bfa77a]/30 flex items-center justify-end gap-3">
+              <a
+                href={healthViewUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-[#6d4c1e] hover:text-[#bfa77a] transition"
+              >
+                Dashboard
+              </a>
+              <span className="text-[#bfa77a]/70">|</span>
+              <a
+                href={healthJsonUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-[#6d4c1e] hover:text-[#bfa77a] transition"
+              >
+                JSON
+              </a>
             </div>
           </div>
         )}

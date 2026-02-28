@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ cartItems, onHomeClick }) => {
-  const backend = useBackendStatus(5000);
+  const { status: backend, isChecking, checkStatus } = useBackendStatus();
 
   return (
     <header className="lux-header sticky top-0 z-40">
@@ -44,9 +44,20 @@ const Header: React.FC<HeaderProps> = ({ cartItems, onHomeClick }) => {
               )}
             </div>
             <div className="ml-2 flex items-center">
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-[0.65rem] font-semibold border ${backend === 'online' ? 'border-green-500 text-green-400' : backend === 'offline' ? 'border-red-500 text-red-400' : 'border-yellow-500 text-yellow-400'}`}>
-                {backend === 'online' ? 'Backend: Connected' : backend === 'offline' ? 'Backend: Offline' : 'Backend: Checking'}
-              </span>
+              <button
+                type="button"
+                onClick={checkStatus}
+                disabled={isChecking}
+                className={`inline-flex items-center px-2 py-1 rounded-full text-[0.65rem] font-semibold border transition ${backend === 'online' ? 'border-green-500 text-green-400' : backend === 'offline' ? 'border-red-500 text-red-400' : 'border-yellow-500 text-yellow-400'}`}
+              >
+                {isChecking
+                  ? 'Backend: Checking...'
+                  : backend === 'online'
+                    ? 'Backend: Connected'
+                    : backend === 'offline'
+                      ? 'Backend: Offline'
+                      : 'Backend: Check'}
+              </button>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useRef, useEffect, useMemo, useState, type FC } from "react";
-import { apiFetch } from "../config/api";
+import { apiFetch, parseApiError } from "../config/api";
 import FoundationSwatchPanel from './FoundationSwatchPanel';
 import CartridgeMarquee, { type Cartridge } from './CartridgeMarquee';
 
@@ -467,7 +467,10 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
           finish // pass preset
         })
       });
-      if (!response.ok) throw new Error('API request failed');
+      if (!response.ok) {
+        const detail = await parseApiError(response);
+        throw new Error(detail);
+      }
       const result = await response.json();
       if (result.success && result.processed_image) {
         setProcessedImage(result.processed_image);
@@ -479,7 +482,9 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
         setFaceDetected(false);
       }
     } catch (error) {
-      setErrorMessage('Failed to process image. Please ensure the backend is running.');
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error applying foundation:', error);
+      setErrorMessage(`Failed to process image: ${message}`);
       setProcessedImage(null);
       setFaceDetected(false);
     } finally {
@@ -1014,20 +1019,19 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
         className="relative w-full max-w-5xl mx-auto my-6 rounded-3xl lux-card p-4 sm:p-6 md:p-8 flex flex-col gap-6 min-h-0"
         style={{ fontFamily: 'serif' }}
       >
-        {/* Header Row: Close Button and Occasion Selector */}
-        <div className="absolute top-6 left-6 flex items-center gap-2 z-10 rounded-full border border-[#bfa77a] bg-white/90 px-3 py-1 text-xs">
-          <span className="font-semibold text-[#6d4c1e]">Live tone:</span>
-          <span className="font-bold text-[#bfa77a] capitalize">{effectiveSkinTone}</span>
-          {toneConfidence > 0 && <span className="text-[#6d4c1e]/70">({toneConfidence}%)</span>}
-          {launchMode === 'cartridge' && (
-            <span className="rounded-full border border-[#d4af37] bg-[#fffbe6] px-2 py-0.5 font-semibold text-[#6d4c1e]">
-              Refill Mode
-            </span>
-          )}
-        </div>
+        {/* Header Row: Live tone + Close */}
+        <div className="w-full flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 rounded-full border border-[#bfa77a] bg-white/90 px-3 py-1 text-xs">
+            <span className="font-semibold text-[#6d4c1e]">Live tone:</span>
+            <span className="font-bold text-[#bfa77a] capitalize">{effectiveSkinTone}</span>
+            {toneConfidence > 0 && <span className="text-[#6d4c1e]/70">({toneConfidence}%)</span>}
+            {launchMode === 'cartridge' && (
+              <span className="rounded-full border border-[#d4af37] bg-[#fffbe6] px-2 py-0.5 font-semibold text-[#6d4c1e]">
+                Refill Mode
+              </span>
+            )}
+          </div>
 
-        <div className="absolute top-6 right-6 flex items-center gap-4 z-10">
-          {/* Close Button */}
           <button
             className="bg-[#d4af37] text-white rounded-full p-2 shadow hover:bg-black transition"
             onClick={handleClose}
