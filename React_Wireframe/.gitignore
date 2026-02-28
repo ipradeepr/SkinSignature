@@ -1,0 +1,50 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Deployment metadata
+.vercel/
+
+# OS and editor files
+.DS_Store
+.vscode/
+*.log
+
+# Dependency lock files (optional, keep if you want reproducible installs)
+# yarn.lock
+# pnpm-lock.yaml
+
+# Misc
+*.swp
+*.swo
+
+# Ignore build cache
+.cache/
+
+# Ignore coverage reports
+coverage/
+
+# Ignore IDE settings
+.idea/
+.vs/
+
+# Ignore Mac system files
+Thumbs.db
+
+# Ignore custom config files (add as needed)
+
+# Python cache artifacts
+__pycache__/
+*.py[cod]
+
+# Python virtual environments
+.venv/
+venv/
+

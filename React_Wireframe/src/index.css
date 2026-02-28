@@ -1,0 +1,310 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --lux-ink: #1c1a17;
+  --lux-brown: #5b4632;
+  --lux-gold: #bfa77a;
+  --lux-gold-strong: #a98954;
+  --lux-cream: #f7f2ea;
+  --lux-sand: #efe7db;
+  --lux-blush: #efe6dc;
+}
+
+/* Uniform style for all main action buttons (config + add to cart) */
+.main-action-btn {
+  min-height: 48px;
+  padding: 0.5rem 1.5rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lux-cream);
+  background: linear-gradient(135deg, #1c1a17 0%, #2a241f 45%, #1c1a17 100%);
+  box-shadow: 0 10px 24px rgba(28, 26, 23, 0.22);
+  border: 1px solid var(--lux-gold);
+  outline: none;
+  transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.36s cubic-bezier(0.22, 1, 0.36, 1), background 0.42s cubic-bezier(0.22, 1, 0.36, 1), color 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  white-space: normal;
+}
+
+.main-action-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 6px 16px rgba(28, 26, 23, 0.2);
+}
+
+.main-action-btn.active {
+  box-shadow: 0 12px 28px rgba(191, 167, 122, 0.25);
+  border: 1px solid var(--lux-gold-strong);
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  color: var(--lux-ink);
+  background: var(--lux-cream);
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Custom animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom gradient utilities */
+.bg-gradient-to-br {
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+}
+
+/* Backdrop blur utilities */
+.backdrop-blur-lg {
+  backdrop-filter: blur(16px);
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+/* Uniform button styles for Try On buttons */
+.tryon-btn {
+  min-width: 200px;
+  min-height: 48px;
+  padding: 0.5rem 1.5rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lux-cream);
+  background: linear-gradient(135deg, #1c1a17 0%, #2a241f 45%, #1c1a17 100%);
+  box-shadow: 0 8px 20px rgba(28, 26, 23, 0.25);
+  border: 1px solid var(--lux-gold);
+  outline: none;
+  transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.36s cubic-bezier(0.22, 1, 0.36, 1), background 0.42s cubic-bezier(0.22, 1, 0.36, 1), color 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  white-space: normal;
+}
+
+.tryon-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 4px 12px rgba(28, 26, 23, 0.2);
+}
+
+.tryon-btn.active {
+  box-shadow: 0 10px 24px rgba(191, 167, 122, 0.25);
+  border: 1px solid var(--lux-gold-strong);
+}
+
+/* Luxury utility classes */
+.lux-page {
+  background: radial-gradient(circle at top left, #fff9f1 0%, var(--lux-cream) 45%, var(--lux-sand) 100%);
+}
+
+.lux-card {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(191, 167, 122, 0.35);
+  box-shadow: 0 18px 40px rgba(36, 29, 20, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.lux-smooth-panel {
+  transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.48s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.48s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lux-header {
+  background: rgba(28, 26, 23, 0.92);
+  border-bottom: 1px solid rgba(191, 167, 122, 0.35);
+  backdrop-filter: blur(12px);
+}
+
+.lux-logo {
+  font-family: 'Playfair Display', serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lux-cream);
+}
+
+.lux-link {
+  color: var(--lux-cream);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.lux-link:hover {
+  color: var(--lux-gold);
+}
+
+.lux-title {
+  font-family: 'Playfair Display', serif;
+  color: var(--lux-ink);
+}
+
+.lux-muted {
+  color: rgba(28, 26, 23, 0.65);
+}
+
+.lux-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(191, 167, 122, 0.6) 50%, transparent 100%);
+}
+
+.lux-pill {
+  background: rgba(191, 167, 122, 0.12);
+  border: 1px solid rgba(191, 167, 122, 0.55);
+  color: var(--lux-brown);
+  border-radius: 999px;
+}
+
+/* Subtle luxury-pattern border (brand-agnostic) */
+.luxury-border {
+  --lux-bg: #ffffff;
+  --lux-gold: #bfa77a; /* matches existing theme */
+  padding: 10px; /* visible border width */
+  border-radius: 1rem; /* harmonize with rounded-2xl */
+  background:
+    linear-gradient(var(--lux-bg), var(--lux-bg)) padding-box,
+    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMiIgaGVpZ2h0PSIyMiIgdmlld0JveD0iMCAwIDIyIDIyIj48ZyBmaWxsPSJub25lIiBzdHJva2U9Im5vbmUiPjxyZWN0IHdpZHRoPSIyMiIgaGVpZ2h0PSIyMiIgZmlsbD0idHJhbnNwYXJlbnQiLz48cGF0aCBkPSJNMTEgMSBMMTIuMiA4IDIxIDExIDEyLjIgMTQgMTEgMjEgOS44IDE0IDEgMTEgOS44IDhaIiBmaWxsPSIjYmZhNzdhIiBmaWxsLW9wYWNpdHk9IjAuOSIvPjxjaXJjbGUgY3g9IjExIiBjeT0iMTEiIHI9IjEuNSIgZmlsbD0iI2Q4YzQ5YSIvPjwvZz48L3N2Zz4=") border-box;
+  background-clip: padding-box, border-box;
+  background-origin: padding-box, border-box;
+  background-repeat: no-repeat, round;
+  background-size: auto, 18px 18px; /* small, refined pattern */
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure children follow the rounded shape */
+.luxury-border > * {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+/* Optional brand watermark utility (if needed elsewhere) */
+.brand-watermark {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  font-weight: 700;
+  color: rgba(191, 167, 122, 0.45);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  user-select: none;
+  pointer-events: none;
+}
+
+@keyframes cartridge-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.cartridge-marquee {
+  overflow: hidden;
+  width: 100%;
+}
+
+.cartridge-track {
+  display: flex;
+  gap: 14px;
+  width: max-content;
+  animation: cartridge-marquee 30s linear infinite;
+}
+
+.cartridge-item {
+  flex: 0 0 auto;
+  width: clamp(64px, 18vw, 88px);
+  text-align: center;
+}
+
+.cartridge-shell {
+  position: relative;
+  width: 48px;
+  height: 92px;
+  margin: 0 auto;
+  border-radius: 999px;
+  border: 2px solid rgba(191, 167, 122, 0.9);
+  background: rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(36, 29, 20, 0.08);
+}
+
+.cartridge-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 75%;
+  border-radius: 999px;
+  transition: transform 180ms ease, filter 180ms ease, opacity 180ms ease;
+}
+
+.cartridge-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 38%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0));
+}
+
+.cartridge-label {
+  margin-top: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+  white-space: normal;
+  word-break: break-word;
+  min-height: 1.5rem;
+  color: rgba(28, 26, 23, 0.75);
+}
+
+.cartridge-item--inactive {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.cartridge-item--active {
+  opacity: 1;
+}
+
+.cartridge-item--active .cartridge-shell {
+  box-shadow: 0 14px 26px rgba(191, 167, 122, 0.22);
+}
+
+.cartridge-item--active .cartridge-fill {
+  transform: translateY(-2px);
+}

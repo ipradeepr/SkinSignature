@@ -1,0 +1,31 @@
+mediapipe==0.10.9
+numpy>=1.21.0,<2.0.0
+opencv-python>=4.7.0.72,<4.8.0.0
+pandas
+pydantic<2.0.0
+fastapi<0.100.0
+# ...add other required packages as needed...
+
+# --- Instructions for setup (do NOT include these lines in requirements.txt) ---
+# 1. Remove your current virtual environment (if any):
+#    deactivate
+#    rmdir /s /q .venv   # Windows
+#    rm -rf .venv        # macOS/Linux
+#
+# 2. Ensure you are using Python 3.10 (required for mediapipe):
+#    Windows:
+#        py -3.10 -m venv .venv
+#        .venv\Scripts\activate
+#    macOS/Linux:
+#        python3.10 -m venv .venv
+#        source .venv/bin/activate
+#
+# 3. Upgrade pip and wheel:
+#    pip install --upgrade pip wheel
+#
+# 4. Install dependencies from requirements.txt:
+#    pip install -r requirements.txt
+#
+# 5. Verify installation:
+#    python -c "import mediapipe; import fastapi; import pydantic; import cv2; import numpy; print('All OK')"
+# --- End of instructions ---

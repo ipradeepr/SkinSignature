@@ -1,0 +1,11 @@
+This is a placeholder for your PyTorch foundation style transfer model.
+
+To enable neural/deep learning-based foundation application:
+- Train or export a PyTorch model that takes (image, color, mask) as input and outputs a stylized image.
+- Save the model as 'foundation_style_model.pt' in this backend directory.
+- The backend will automatically load and use this model if present.
+
+Example (Python):
+torch.jit.save(your_traced_or_scripted_model, "foundation_style_model.pt")
+
+If this file is missing, the backend will use classic (non-neural) blending logic.

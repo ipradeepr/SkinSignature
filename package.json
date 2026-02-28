@@ -1,0 +1,11 @@
+{
+  "name": "skin-signature-root",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Root package to forward scripts to React_Wireframe",
+  "scripts": {
+    "build": "npm --prefix React_Wireframe run build",
+    "dev": "npm --prefix React_Wireframe run dev",
+    "preview": "npm --prefix React_Wireframe run preview"
+  }
+}

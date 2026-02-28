@@ -1,0 +1,14 @@
+opencv-python
+numpy
+pillow
+scikit-learn
+scipy
+matplotlib
+requests
+flask
+torch
+torchvision
+fastapi
+uvicorn[standard]
+mediapipe
+pydantic>=2,<3

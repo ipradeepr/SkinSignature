@@ -1,0 +1,2 @@
+const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22"><g fill="none" stroke="none"><rect width="22" height="22" fill="transparent"/><path d="M11 1 L12.2 8 21 11 12.2 14 11 21 9.8 14 1 11 9.8 8Z" fill="#bfa77a" fill-opacity="0.9"/><circle cx="11" cy="11" r="1.5" fill="#d8c49a"/></g></svg>';
+console.log(Buffer.from(svg).toString('base64'));
