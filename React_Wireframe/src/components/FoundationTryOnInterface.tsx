@@ -1317,24 +1317,17 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
               </>
             )}
 
-            {/* Swatch Panel always visible below camera */}
-            <div className="mt-6 w-full max-w-md mx-auto flex flex-col items-center">
+            {/* Shade preview section (hidden in store buy flow to avoid duplication with cartridge formula) */}
+            {experienceType !== 'store' && (
+              <div className="mt-6 w-full max-w-md mx-auto flex flex-col items-center">
               {/* Single, centered label for swatch panel */}
               <div className="font-bold text-xl text-[#bfa77a] mb-3 text-center">
-                {experienceType === 'store'
-                  ? isCartridgeSelectionMode
-                    ? 'Cartridge Shade Preview'
-                    : 'Virtual Shade Preview (Try)'
-                  : `${activeInhouseSet.label} shade gradients`}
+                {`${activeInhouseSet.label} shade gradients`}
               </div>
               <div className="text-xs text-[#6d4c1e] mb-2 text-center">
-                {experienceType === 'store'
-                  ? isCartridgeSelectionMode
-                    ? 'Selection palette: preview shades generated from cartridge matching. Confirm one to keep this blend active.'
-                    : 'Try-on palette: digital shade selection preview. The cartridge wall above shows purchase formula.'
-                  : isCartridgeSelectionMode
-                    ? 'These previews are generated from your selected cartridges with light-to-deep blend progression.'
-                    : 'These shades are generated from your 3 cartridges with different light-to-dark mix ratios.'}
+                {isCartridgeSelectionMode
+                  ? 'These previews are generated from your selected cartridges with light-to-deep blend progression.'
+                  : 'These shades are generated from your 3 cartridges with different light-to-dark mix ratios.'}
               </div>
               {/* Swatch panel: horizontal scroll if overflow */}
               <div className="w-full overflow-x-auto pb-2">
@@ -1360,7 +1353,8 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                 </div>
                 <div className="text-sm text-[#6d4c1e] mt-1">{selectedShade.hex}</div>
               </div>
-            </div>
+              </div>
+            )}
           </div>
           {/* Right Section - Recommended Foundation Details */}
           <div className="flex-1 flex flex-col items-center justify-start min-w-0">
