@@ -63,7 +63,7 @@ const SystemHealthPanel: FC = () => {
           <button
             type="button"
             onClick={loadHealth}
-            className="text-xs px-2 py-1 rounded border border-[#bfa77a] text-[#6d4c1e] hover:bg-[#bfa77a] hover:text-white transition"
+            className="text-xs px-2 py-1 rounded border border-[#bfa77a] text-[#6d4c1e] hover:bg-[#bfa77a] hover:text-white lux-cta-transition"
             disabled={loading}
           >
             {loading ? 'Checking...' : 'Refresh'}
@@ -116,7 +116,7 @@ const SystemHealthPanel: FC = () => {
                 href={healthViewUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="font-semibold text-[#6d4c1e] hover:text-[#bfa77a] transition"
+                className="font-semibold text-[#6d4c1e] hover:text-[#bfa77a] lux-link-transition"
               >
                 Dashboard
               </a>
@@ -125,7 +125,7 @@ const SystemHealthPanel: FC = () => {
                 href={healthJsonUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="font-semibold text-[#6d4c1e] hover:text-[#bfa77a] transition"
+                className="font-semibold text-[#6d4c1e] hover:text-[#bfa77a] lux-link-transition"
               >
                 JSON
               </a>

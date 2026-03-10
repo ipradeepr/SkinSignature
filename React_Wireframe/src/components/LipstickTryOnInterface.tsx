@@ -958,7 +958,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
         {/* Close Button */}
         <button
-          className="absolute top-6 right-6 bg-[#d4af37] text-white rounded-full w-10 h-10 flex items-center justify-center shadow hover:bg-black transition"
+          className="absolute top-6 right-6 bg-[#d4af37] text-white rounded-full w-10 h-10 flex items-center justify-center shadow hover:bg-black lux-cta-transition"
           onClick={handleClose}
         >
           ✕
@@ -980,7 +980,23 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             {/* Show Camera Feed ONLY when no image captured */}
             {!capturedImage && (
               <>
-                <div className="w-full h-64 md:h-80 overflow-hidden flex items-center justify-center bg-black/5 relative"
+                {/* Zoom Slider */}
+                <div className="mb-3 w-[95%] mx-auto lux-card rounded-xl px-4 py-2 zoom-control-card">
+                  <div className="flex items-center justify-between text-xs text-[#6d4c1e] mb-1 zoom-control-meta">
+                    <span>Zoom</span>
+                    <span>{Math.round(zoomTarget * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={2.5}
+                    step={0.1}
+                    value={zoomTarget}
+                    onChange={(e) => setZoomTarget(parseFloat(e.target.value))}
+                    className="w-full accent-[#bfa77a] zoom-control-slider"
+                  />
+                </div>
+                <div className="w-full h-64 md:h-80 overflow-hidden flex items-center justify-center bg-black/5 relative camera-lux-frame"
                   style={{ willChange: 'transform' }}>
                   {/* Decorative inner frame */}
                   <div className="absolute inset-2 rounded-xl border-2 border-[#d4af37]/70 pointer-events-none" />
@@ -1000,31 +1016,14 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                 />
                 </div>
                 <canvas ref={canvasRef} className="hidden" />
-                
-                {/* Zoom Slider */}
-                <div className="mt-3 w-[95%] mx-auto lux-card rounded-xl px-4 py-2">
-                  <div className="flex items-center justify-between text-xs text-[#6d4c1e] mb-1">
-                    <span>Zoom</span>
-                    <span>{Math.round(zoom * 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={2.5}
-                    step={0.1}
-                    value={zoomTarget}
-                    onChange={(e) => setZoomTarget(parseFloat(e.target.value))}
-                    className="w-full accent-[#bfa77a]"
-                  />
-                </div>
 
                 {/* Capture Button */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                <div className="mt-4 flex justify-center">
                   <button
                     onClick={captureSnapshot}
-                    className="main-action-btn"
+                    className="main-action-btn camera-capture-btn"
                   >
-                    📸 Capture Photo
+                    📸 Monogram Portrait
                   </button>
                 </div>
               </>
@@ -1047,7 +1046,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                     </div>
                     <button
                       onClick={handleRetake}
-                      className="text-sm px-3 py-1 rounded-lg border border-[#bfa77a] text-[#5b4632] hover:bg-[#bfa77a] hover:text-white transition"
+                      className="text-sm px-3 py-1 rounded-lg border border-[#bfa77a] text-[#5b4632] hover:bg-[#bfa77a] hover:text-white lux-cta-transition"
                     >
                       Retake
                     </button>
@@ -1083,7 +1082,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                         key={set.id}
                         type="button"
                         onClick={() => setSelectedInhouseSetId(set.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs border transition ${
+                        className={`px-3 py-1.5 rounded-full text-xs border lux-cta-transition ${
                           selectedInhouseSetId === set.id
                             ? 'border-[#bfa77a] bg-[#1c1a17] text-[#f7f2ea]'
                             : 'border-[#d9c6a4] bg-white/90 text-[#5b4632] hover:bg-white'
@@ -1147,7 +1146,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                     <button
                       type="button"
                       onClick={startCamera}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-[#bfa77a] text-[#5b4632] hover:bg-[#bfa77a] hover:text-white transition"
+                      className="text-xs px-3 py-1.5 rounded-lg border border-[#bfa77a] text-[#5b4632] hover:bg-[#bfa77a] hover:text-white lux-cta-transition"
                     >
                       Retry Camera
                     </button>
@@ -1341,13 +1340,13 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             <div className="-mt-2 mb-6 flex items-center justify-center gap-2">
               <button
                 onClick={() => setFinish('matte')}
-                className={`px-4 py-2 rounded-l-lg border ${finish==='matte' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
+                className={`px-4 py-2 rounded-l-lg border lux-cta-transition ${finish==='matte' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
               >
                 Matte
               </button>
               <button
                 onClick={() => setFinish('glossy')}
-                className={`px-4 py-2 rounded-r-lg border ${finish==='glossy' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
+                className={`px-4 py-2 rounded-r-lg border lux-cta-transition ${finish==='glossy' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
               >
                 Glossy
               </button>

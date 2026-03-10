@@ -1033,7 +1033,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
           </div>
 
           <button
-            className="bg-[#d4af37] text-white rounded-full p-2 shadow hover:bg-black transition"
+            className="bg-[#d4af37] text-white rounded-full p-2 shadow hover:bg-black lux-cta-transition"
             onClick={handleClose}
           >
             &#10005;
@@ -1093,7 +1093,23 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
               {/* Video Element */}
               {!capturedImage && (
                 <>
-                  <div className="w-full h-64 md:h-80 overflow-hidden flex items-center justify-center bg-black/5 relative" style={{ willChange: 'transform' }}>
+                  {/* Zoom Slider */}
+                  <div className="mb-3 w-[95%] mx-auto lux-card rounded-xl px-4 py-2 zoom-control-card">
+                    <div className="flex items-center justify-between text-xs text-[#6d4c1e] mb-1 zoom-control-meta">
+                      <span>Zoom</span>
+                      <span>{Math.round(zoomTarget * 100)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={2.5}
+                      step={0.1}
+                      value={zoomTarget}
+                      onChange={(e) => setZoomTarget(parseFloat(e.target.value))}
+                      className="w-full accent-[#bfa77a] zoom-control-slider"
+                    />
+                  </div>
+                  <div className="w-full h-64 md:h-80 overflow-hidden flex items-center justify-center bg-black/5 relative camera-lux-frame" style={{ willChange: 'transform' }}>
                     {/* Decorative inner frame */}
                     <div className="absolute inset-2 rounded-xl border-2 border-[#d4af37]/70 pointer-events-none" />
                     <video
@@ -1111,32 +1127,16 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                       style={{ pointerEvents: 'none', borderRadius: '0.75rem' }}
                     />
                   </div>
-                  {/* Zoom Slider */}
-                  <div className="mt-3 w-[95%] mx-auto lux-card rounded-xl px-4 py-2">
-                    <div className="flex items-center justify-between text-xs text-[#6d4c1e] mb-1">
-                      <span>Zoom</span>
-                      <span>{Math.round(zoomTarget * 100)}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={1}
-                      max={2.5}
-                      step={0.1}
-                      value={zoomTarget}
-                      onChange={(e) => setZoomTarget(parseFloat(e.target.value))}
-                      className="w-full accent-[#bfa77a]"
-                    />
-                  </div>
                   {/* Hidden canvas for snapshot */}
                   <canvas ref={canvasRef} className="hidden" />
                   {/* Capture Button: Only show after a shade is selected */}
                   {shadeSelected && (
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                    <div className="mt-4 flex justify-center">
                       <button
                         onClick={captureSnapshot}
-                        className="main-action-btn"
+                        className="main-action-btn camera-capture-btn"
                       >
-                        📸 Capture Photo
+                        📸 Monogram Portrait
                       </button>
                     </div>
                   )}
@@ -1153,7 +1153,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                         <button
                           type="button"
                           onClick={startCamera}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-[#bfa77a] text-[#5b4632] hover:bg-[#bfa77a] hover:text-white transition"
+                          className="text-xs px-3 py-1.5 rounded-lg border border-[#bfa77a] text-[#5b4632] hover:bg-[#bfa77a] hover:text-white lux-cta-transition"
                         >
                           Retry Camera
                         </button>
@@ -1180,7 +1180,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                       </div>
                       <button
                         onClick={handleRetake}
-                        className="text-sm px-3 py-1 rounded-lg border border-[#bfa77a] text-[#5b4632] hover:bg-[#bfa77a] hover:text-white transition"
+                        className="text-sm px-3 py-1 rounded-lg border border-[#bfa77a] text-[#5b4632] hover:bg-[#bfa77a] hover:text-white lux-cta-transition"
                       >
                         Retake
                       </button>
@@ -1238,13 +1238,13 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                     {/* Legacy buttons retained */}
                     <div className="mt-3 flex gap-2">
                       <button 
-                        className="flex-1 text-xs py-1 px-2 rounded border border-[#bfa77a] text-[#bfa77a] hover:bg-[#bfa77a]/10"
+                        className="flex-1 text-xs py-1 px-2 rounded border border-[#bfa77a] text-[#bfa77a] hover:bg-[#bfa77a]/10 lux-cta-transition"
                         onClick={() => setProcessedImage(capturedImage)}
                       >
                         Show Before
                       </button>
                       <button 
-                        className="flex-1 text-xs py-1 px-2 rounded border border-[#bfa77a] text-[#bfa77a] hover:bg-[#bfa77a]/10"
+                        className="flex-1 text-xs py-1 px-2 rounded border border-[#bfa77a] text-[#bfa77a] hover:bg-[#bfa77a]/10 lux-cta-transition"
                         onClick={() => applyFoundationWithBackend(capturedImage!, selectedShade.hex)}
                       >
                         Show After
@@ -1265,7 +1265,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                         key={set.id}
                         type="button"
                         onClick={() => setSelectedInhouseSetId(set.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs border transition ${
+                        className={`px-3 py-1.5 rounded-full text-xs border lux-cta-transition ${
                           selectedInhouseSetId === set.id
                             ? 'border-[#bfa77a] bg-[#1c1a17] text-[#f7f2ea]'
                             : 'border-[#d9c6a4] bg-white/90 text-[#5b4632] hover:bg-white'
@@ -1414,7 +1414,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                         key={candidate.shade.name}
                         type="button"
                         onClick={() => handleShadeSelect(candidate.shade)}
-                        className="w-full flex items-center justify-between rounded-lg border border-[#d9c6a4] bg-white/90 px-3 py-2 text-left hover:bg-white transition"
+                        className="w-full flex items-center justify-between rounded-lg border border-[#d9c6a4] bg-white/90 px-3 py-2 text-left hover:bg-white lux-cta-transition"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <span

@@ -99,7 +99,7 @@ const CameraInterface: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
         {/* Close Button */}
         {onClose && (
           <button
-            className="absolute top-4 right-4 text-[#bfa77a] hover:text-[#6d4c1e] text-3xl font-bold transition"
+            className="absolute top-4 right-4 text-[#bfa77a] hover:text-[#6d4c1e] text-3xl font-bold lux-cta-transition"
             onClick={onClose}
             aria-label="Close Camera"
           >

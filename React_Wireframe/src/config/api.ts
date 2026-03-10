@@ -5,12 +5,39 @@ const envBase =
 
 export const API_BASE: string = envBase.replace(/\/$/, '');
 
+const isLoopbackApiBase = (base: string): boolean => {
+  if (!base) return false;
+  try {
+    const parsed = new URL(base);
+    return ['localhost', '127.0.0.1', '0.0.0.0'].includes(parsed.hostname);
+  } catch {
+    return /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?/i.test(base);
+  }
+};
+
+const isLocalHost = (hostname: string): boolean => {
+  return ['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname);
+};
+
 export const apiUrl = (path: string): string => {
   if (!path.startsWith('/')) return API_BASE ? `${API_BASE}/${path}` : `/${path}`;
   return API_BASE ? `${API_BASE}${path}` : path;
 };
 
 export const apiFetch = (path: string, init?: RequestInit) => {
+  if (
+    typeof window !== 'undefined' &&
+    API_BASE &&
+    isLoopbackApiBase(API_BASE) &&
+    !isLocalHost(window.location.hostname)
+  ) {
+    return Promise.reject(
+      new Error(
+        'Invalid API configuration: frontend is running on a public host but API base points to localhost. Set VITE_API_BASE to your deployed backend URL (https).'
+      )
+    );
+  }
+
   const url = apiUrl(path);
   return fetch(url, init);
 };
