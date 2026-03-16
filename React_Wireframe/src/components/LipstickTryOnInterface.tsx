@@ -977,8 +977,11 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
               />
             </div>
 
-            <div className="mb-3 flex items-center justify-end">
-              <div className="inline-flex rounded-full border border-[#d9c6a4] overflow-hidden">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-[160px] items-center gap-2">
+                <label className="text-sm font-semibold text-[#6d4c1e]">Lighting</label>
+              </div>
+              <div className="inline-flex rounded-full border border-[#d9c6a4] overflow-hidden self-start sm:self-auto">
                 <button
                   type="button"
                   onClick={() => setLightingMode('day')}
@@ -1018,7 +1021,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                 <div className="w-full h-64 md:h-80 overflow-hidden flex items-center justify-center bg-black/5 relative camera-lux-frame"
                   style={{ willChange: 'transform' }}>
                   {/* Decorative inner frame */}
-                  <div className="absolute inset-2 rounded-xl border-2 border-[#d4af37]/70 pointer-events-none" />
+                  <div className="camera-lux-inner-frame" />
                   <video
                   ref={videoRef}
                   autoPlay

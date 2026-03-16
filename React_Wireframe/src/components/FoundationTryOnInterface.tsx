@@ -1111,7 +1111,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                   </div>
                   <div className="w-full h-64 md:h-80 overflow-hidden flex items-center justify-center bg-black/5 relative camera-lux-frame" style={{ willChange: 'transform' }}>
                     {/* Decorative inner frame */}
-                    <div className="absolute inset-2 rounded-xl border-2 border-[#d4af37]/70 pointer-events-none" />
+                    <div className="camera-lux-inner-frame" />
                     <video
                       ref={videoRef}
                       autoPlay
