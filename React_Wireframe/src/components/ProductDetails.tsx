@@ -12,6 +12,14 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
   selectedConfig,
   onConfigChange,
 }) => {
+  const [hasConfigBeenChanged, setHasConfigBeenChanged] = React.useState(false);
+
+  const handleConfigSelect = (config: 'foundation' | 'lipstick') => {
+    if (config !== selectedConfig) {
+      setHasConfigBeenChanged(true);
+    }
+    onConfigChange(config);
+  };
 
   return (
     <div className="flex flex-col space-y-6 sm:space-y-8">
@@ -37,9 +45,9 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
         <div>
           <h3 className="text-xl sm:text-2xl font-semibold lux-title mb-3 sm:mb-4">Luxury AI Beauty Intelligence, Now Personalized by Mode</h3>
           <p className="lux-muted leading-relaxed text-sm sm:text-base">
-            Skin Signature now adapts to how you shop and apply beauty: In-Store Experience, Refill Cartridge Match, and In-house Experience.
+            Skin Signature now adapts to how you shop and apply beauty: In-Store Experience, In-house Experience, and Luxury Standards.
             In real time, AI analyzes your live skin signal—tone, undertone, texture, and lighting—to determine your best-match shades,
-            then recommends couture-level foundation and lipstick looks with instantly visualized shade-to-cartridge mapping in refill purchase mode.
+            then recommends couture-level foundation and lipstick looks with instantly visualized shade-to-cartridge mapping in Luxury Standards mode.
           </p>
         </div>
         
@@ -60,21 +68,34 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
 
       {/* Configuration Selection - Buttons (Updated) */}
       <div className="mb-6">
-        <span className="font-semibold mb-2 block lux-title">Configuration</span>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <span className="font-semibold block lux-title">Configuration</span>
+          <span className="lux-pill px-3 py-1 text-xs font-semibold tracking-wide uppercase">
+            Selected: {selectedConfig === 'foundation' ? 'Foundation' : 'Lipstick'}
+          </span>
+        </div>
         <div className="flex gap-2 w-full">
           <button
-            className={`main-action-btn flex-1 w-full${selectedConfig === 'foundation' ? ' active' : ''}`}
+            className={`main-action-btn config-option-btn flex-1 w-full${selectedConfig === 'foundation' ? ' active' : ''}`}
             type="button"
-            onClick={() => onConfigChange('foundation')}
+            onClick={() => handleConfigSelect('foundation')}
+            aria-pressed={selectedConfig === 'foundation'}
           >
-            Foundation
+            {!hasConfigBeenChanged && selectedConfig === 'foundation' && (
+              <span className="config-default-badge">Default</span>
+            )}
+            {selectedConfig === 'foundation' ? '✓ Foundation Selected' : 'Foundation'}
           </button>
           <button
-            className={`main-action-btn flex-1 w-full${selectedConfig === 'lipstick' ? ' active' : ''}`}
+            className={`main-action-btn config-option-btn flex-1 w-full${selectedConfig === 'lipstick' ? ' active' : ''}`}
             type="button"
-            onClick={() => onConfigChange('lipstick')}
+            onClick={() => handleConfigSelect('lipstick')}
+            aria-pressed={selectedConfig === 'lipstick'}
           >
-            Lipstick
+            {!hasConfigBeenChanged && selectedConfig === 'lipstick' && (
+              <span className="config-default-badge">Default</span>
+            )}
+            {selectedConfig === 'lipstick' ? '✓ Lipstick Selected' : 'Lipstick'}
           </button>
         </div>
       </div>

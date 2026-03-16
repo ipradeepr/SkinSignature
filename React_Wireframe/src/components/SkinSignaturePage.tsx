@@ -542,14 +542,14 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
               <div className="lux-card rounded-2xl p-6">
                 <h3 className="text-xl font-semibold mb-3 lux-title">
                   {launchMode === 'cartridge'
-                    ? 'Cartridge Purchase Mode (Wider Shade Catalog)'
+                    ? 'Luxury Standards Mode (Cartridge Blending & Purchase)'
                     : experienceType === 'store'
                       ? 'Boutique AI Try-On (Store Experience)'
                       : 'Personalized AI Try-On (In-house Experience)'}
                 </h3>
                 <p className="text-sm lux-muted">
                   {launchMode === 'cartridge'
-                    ? 'Try a wider range of in-store shades, compare your best matches, and instantly view the exact foundation and lipstick cartridges behind each selected look so you can purchase the right refills for your device.'
+                    ? 'For device owners, compare more looks, discover cartridge options to purchase, and preview unique blended shades with exact foundation and lipstick cartridge mappings for every selected result.'
                     : experienceType === 'store'
                     ? 'Our AI analyzes your captured image using precise facial landmarks, luminance and undertone metrics to propose shades available in-store (LV-Colorcode). Data from the OMS curates only the shades physically present, ensuring your recommendation is immediately purchasable. Foundation application uses a full-face, feathered mask that excludes eyes and lips for a studio-realistic finish.'
                     : 'Our AI analyzes your captured image and proposes blends from the cartridges loaded in your device. When you select a shade, the device dispenses a precisely measured blend from 3 cartridges to match your undertone and luminance. The virtual application uses a full-face, feathered mask excluding eyes and lips, rendering a realistic preview of your personal blend.'}
@@ -570,14 +570,14 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
                   <div className="p-3 rounded-xl bg-white/80 border border-[#d4af37]/40">
                     <div className="font-semibold lux-title">
                       {launchMode === 'cartridge'
-                        ? 'Cartridge Purchase Guide'
+                        ? 'Luxury Standards Guide'
                         : experienceType === 'store'
                           ? 'OMS-Curated Shades'
                           : 'Device Cartridge Blends'}
                     </div>
                     <div className="text-xs lux-muted">
                       {launchMode === 'cartridge'
-                        ? 'Maps your selected shades to the exact cartridge IDs and proportions to buy for your device.'
+                        ? 'Maps selected looks to cartridge IDs and blend ratios so you can buy and create unique shades on your device.'
                         : experienceType === 'store'
                         ? 'Proposes LV-Colorcode shades available in your boutique.'
                         : 'Dispenses measured quantities from your loaded cartridges.'}

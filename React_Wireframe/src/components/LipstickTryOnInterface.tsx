@@ -976,6 +976,25 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
             </div>
+
+            <div className="mb-3 flex items-center justify-end">
+              <div className="inline-flex rounded-full border border-[#d9c6a4] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setLightingMode('day')}
+                  className={`px-3 py-1 text-xs font-semibold transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${lightingMode === 'day' ? 'bg-[#1c1a17] text-[#f7f2ea]' : 'bg-white/90 text-[#6d4c1e]'}`}
+                >
+                  Day
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLightingMode('evening')}
+                  className={`px-3 py-1 text-xs font-semibold transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${lightingMode === 'evening' ? 'bg-[#1c1a17] text-[#f7f2ea]' : 'bg-white/90 text-[#6d4c1e]'}`}
+                >
+                  Evening
+                </button>
+              </div>
+            </div>
             
             {/* Show Camera Feed ONLY when no image captured */}
             {!capturedImage && (
@@ -1073,6 +1092,23 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
           {!capturedImage && (
             <div className="mt-4 w-full max-w-md mx-auto">
+              {/* Opacity Control - moved up for quicker access */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2 text-sm md:text-base">
+                  <span className="font-semibold text-[#6d4c1e]">Lipstick Intensity</span>
+                  <span className="font-semibold text-[#6d4c1e]">{lipstickOpacity}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={10}
+                  max={100}
+                  step={1}
+                  value={lipstickOpacity}
+                  onChange={(e) => setLipstickOpacity(parseInt(e.target.value))}
+                  className="w-full accent-[#bfa77a] transition-all duration-150"
+                />
+              </div>
+
               {experienceType === 'in-house' && (
                 <div className="lux-card rounded-xl p-3 mb-3">
                   <div className="text-xs font-semibold text-[#6d4c1e] mb-2">In-home lipstick cartridge sets</div>
@@ -1156,25 +1192,6 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             </div>
           )}
 
-          {/* Opacity Control - Show ONLY when no image captured */}
-          {!capturedImage && (
-            <div className="mt-6 w-full max-w-md mx-auto">
-              <div className="flex items-center justify-between mb-2 text-sm md:text-base">
-                <span className="font-semibold text-[#6d4c1e]">Lipstick Intensity</span>
-                <span className="font-semibold text-[#6d4c1e]">{lipstickOpacity}%</span>
-              </div>
-              <input 
-                type="range" 
-                min={10} 
-                max={100} 
-                step={1}
-                value={lipstickOpacity}
-                onChange={(e) => setLipstickOpacity(parseInt(e.target.value))}
-                className="w-full accent-[#bfa77a] transition-all duration-150"
-              />
-            </div>
-          )}
-
           {/* Opacity Control - Show when image captured */}
           {capturedImage && (
             <div className="mt-4 w-full max-w-md mx-auto">
@@ -1253,51 +1270,6 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             </div>
           </div>
 
-          <div className="mt-4 w-full max-w-md mx-auto">
-            <div className="lux-card rounded-xl px-6 py-4">
-              <div className="font-bold text-base text-[#6d4c1e] mb-2">Luxury Checkout Bridge</div>
-              <button
-                type="button"
-                onClick={handleReserveFormula}
-                className="main-action-btn w-full"
-                disabled={reservationLoading}
-              >
-                {reservationLoading ? 'Reserving Formula...' : 'Reserve this Formula'}
-              </button>
-              {reservationMessage && (
-                <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
-                  {reservationReference && (
-                    <div className="font-semibold text-[#bfa77a] mb-1">Ref: {reservationReference}</div>
-                  )}
-                  {reservationMessage}
-                </div>
-              )}
-
-              <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
-                <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Cartridge Replenishment</div>
-                <div className="space-y-1 text-xs text-[#6d4c1e]">
-                  {replenishmentPlan.map((item) => (
-                    <div key={item.cartridgeId} className="flex items-center justify-between gap-2">
-                      <span className="truncate">{item.cartridgeName} · {item.priority}</span>
-                      <span className="font-semibold text-[#bfa77a] shrink-0">{item.etaDays} days</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
-                <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Expected Wear Profile</div>
-                <div className="space-y-1 text-xs text-[#6d4c1e]">
-                  <div className="flex justify-between">
-                    <span>Longevity</span>
-                    <span className="font-semibold text-[#bfa77a]">{expectedWearProfile.longevity}</span>
-                  </div>
-                  <div>{expectedWearProfile.touchUpWindow}</div>
-                  <div>{expectedWearProfile.bestSetting}</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Right Section - Color Palette & Occasion */}
@@ -1352,25 +1324,6 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
               </button>
             </div>
 
-            <div className="-mt-3 mb-6 flex items-center justify-center">
-              <div className="inline-flex rounded-full border border-[#d9c6a4] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setLightingMode('day')}
-                  className={`px-4 py-2 text-xs font-semibold transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${lightingMode === 'day' ? 'bg-[#1c1a17] text-[#f7f2ea]' : 'bg-white/90 text-[#6d4c1e]'}`}
-                >
-                  Day
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLightingMode('evening')}
-                  className={`px-4 py-2 text-xs font-semibold transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${lightingMode === 'evening' ? 'bg-[#1c1a17] text-[#f7f2ea]' : 'bg-white/90 text-[#6d4c1e]'}`}
-                >
-                  Evening
-                </button>
-              </div>
-            </div>
-            
             {/* Color Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
               {activeLipstickShades.map((lipstick) => (
@@ -1407,6 +1360,52 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   </span>
                 </button>
               ))}
+            </div>
+
+            <div className="mb-6">
+              <div className="lux-card rounded-xl px-6 py-4">
+                <div className="font-bold text-base text-[#6d4c1e] mb-2">Luxury Checkout Bridge</div>
+                <button
+                  type="button"
+                  onClick={handleReserveFormula}
+                  className="main-action-btn w-full"
+                  disabled={reservationLoading}
+                >
+                  {reservationLoading ? 'Reserving Formula...' : 'Reserve this Formula'}
+                </button>
+                {reservationMessage && (
+                  <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                    {reservationReference && (
+                      <div className="font-semibold text-[#bfa77a] mb-1">Ref: {reservationReference}</div>
+                    )}
+                    {reservationMessage}
+                  </div>
+                )}
+
+                <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
+                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Cartridge Replenishment</div>
+                  <div className="space-y-1 text-xs text-[#6d4c1e]">
+                    {replenishmentPlan.map((item) => (
+                      <div key={item.cartridgeId} className="flex items-center justify-between gap-2">
+                        <span className="truncate">{item.cartridgeName} · {item.priority}</span>
+                        <span className="font-semibold text-[#bfa77a] shrink-0">{item.etaDays} days</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
+                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Expected Wear Profile</div>
+                  <div className="space-y-1 text-xs text-[#6d4c1e]">
+                    <div className="flex justify-between">
+                      <span>Longevity</span>
+                      <span className="font-semibold text-[#bfa77a]">{expectedWearProfile.longevity}</span>
+                    </div>
+                    <div>{expectedWearProfile.touchUpWindow}</div>
+                    <div>{expectedWearProfile.bestSetting}</div>
+                  </div>
+                </div>
+              </div>
             </div>
             
             {/* Luxury Brand Suggestions */}

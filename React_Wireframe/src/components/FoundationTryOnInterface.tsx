@@ -1318,7 +1318,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
             )}
 
             {/* Shade preview section (hidden in store buy flow to avoid duplication with cartridge formula) */}
-            {experienceType !== 'store' && (
+            {experienceType === 'in-house' && !isCartridgeSelectionMode && (
               <div className="mt-6 w-full max-w-md mx-auto flex flex-col items-center">
               {/* Single, centered label for swatch panel */}
               <div className="font-bold text-xl text-[#bfa77a] mb-3 text-center">
