@@ -171,48 +171,6 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
     onNavigateHome?.();
   };
 
-  const addToCart = async () => {
-    try {
-      const response = await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          product_id: 'SS2025',
-          product_name: 'Skin Signature',
-          configuration: selectedSize,
-          price: selectedSize === 'Portable Pro' ? 1299.0 : 2499.0,
-          quantity: 1,
-          analysis_result: analysisResult,
-          selected_foundation: selectedFoundation,
-          occasion: selectedOccasion,
-        }),
-      });
-      // Parse response safely
-      let responseBody: any = null;
-      try {
-        responseBody = await response.json();
-      } catch (err) {
-        console.error('Failed to parse response JSON:', err);
-      }
-      console.log('Add to cart response:', responseBody);
-
-      // Check for choices array
-      if (response.ok && responseBody && Array.isArray(responseBody.choices) && responseBody.choices.length > 0) {
-        setCartItems((prev) => prev + 1);
-        alert('Added to cart successfully!');
-      } else if (response.ok && (!responseBody || !responseBody.choices || responseBody.choices.length === 0)) {
-        // Handle "no choices" case
-        alert('Response contained no choices. Please try again or contact support.');
-      } else {
-        throw new Error('Failed to add to cart');
-      }
-    } catch (error) {
-      console.error('Add to cart error:', error);
-      setCartItems((prev) => prev + 1);
-      alert('Added to cart! (Demo mode)');
-    }
-  };
-
   useEffect(() => {
     if (realTimeData && realTimeData.skin_tone_data) {
       // ...existing code...
@@ -525,7 +483,6 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
               <div className="order-2 w-full">
                 <div className="lux-card rounded-2xl p-6">
                   <ProductDetails
-                    onAddToCart={addToCart}
                     selectedConfig={selectedConfig}
                     onConfigChange={(config) => {
                       setSelectedConfig(config);

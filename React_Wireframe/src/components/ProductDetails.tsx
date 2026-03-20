@@ -2,13 +2,11 @@ import React from 'react';
 import { Star } from 'lucide-react';
 
 type ProductDetailsProps = {
-  onAddToCart: () => Promise<void>;
   selectedConfig: 'foundation' | 'lipstick';
   onConfigChange: (config: 'foundation' | 'lipstick') => void;
 };
 
 const ProductDetails: React.FC<ProductDetailsProps> = ({ 
-  onAddToCart,
   selectedConfig,
   onConfigChange,
 }) => {
@@ -98,17 +96,6 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
             {selectedConfig === 'lipstick' ? '✓ Lipstick Selected' : 'Lipstick'}
           </button>
         </div>
-      </div>
-
-      {/* Add to Cart Button - always last on mobile */}
-      <div className="mt-4">
-        <button
-          type="button"
-          className="main-action-btn w-full"
-          onClick={onAddToCart}
-        >
-          Add to Cart
-        </button>
       </div>
 
       <div className="text-center">

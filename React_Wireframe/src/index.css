@@ -56,6 +56,58 @@
   border: 1px solid var(--lux-gold-strong);
 }
 
+.main-action-btn.cta-store {
+  border-color: var(--lux-gold);
+  box-shadow: 0 10px 24px rgba(28, 26, 23, 0.22), 0 0 0 1px rgba(191, 167, 122, 0.24);
+}
+
+.main-action-btn.cta-inhouse {
+  border-color: var(--lux-gold-strong);
+  box-shadow: 0 10px 24px rgba(28, 26, 23, 0.22), 0 0 0 1px rgba(169, 137, 84, 0.24);
+}
+
+.main-action-btn.cta-luxury {
+  border-color: var(--lux-brown);
+  box-shadow: 0 10px 24px rgba(28, 26, 23, 0.22), 0 0 0 1px rgba(91, 70, 50, 0.22);
+}
+
+.home-icon-chip {
+  transition: border-color 0.28s ease, box-shadow 0.28s ease, background-color 0.28s ease;
+}
+
+.home-icon-chip.icon-store {
+  border-color: rgba(191, 167, 122, 0.65);
+  background-color: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 10px 22px rgba(28, 26, 23, 0.12), 0 0 0 1px rgba(191, 167, 122, 0.18);
+}
+
+.home-icon-chip.icon-inhouse {
+  border-color: rgba(169, 137, 84, 0.62);
+  background-color: rgba(247, 242, 234, 0.92);
+  box-shadow: 0 10px 22px rgba(28, 26, 23, 0.12), 0 0 0 1px rgba(169, 137, 84, 0.18);
+}
+
+.home-icon-chip.icon-luxury {
+  border-color: rgba(91, 70, 50, 0.52);
+  background-color: rgba(239, 231, 219, 0.88);
+  box-shadow: 0 10px 22px rgba(28, 26, 23, 0.12), 0 0 0 1px rgba(91, 70, 50, 0.16);
+}
+
+.lux-smooth-panel:hover .home-icon-chip {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(28, 26, 23, 0.16), 0 0 0 1px rgba(191, 167, 122, 0.26);
+}
+
+.lux-smooth-panel:hover .main-action-btn {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 14px 30px rgba(28, 26, 23, 0.28), 0 0 0 2px rgba(191, 167, 122, 0.55), 0 0 18px rgba(212, 175, 55, 0.28);
+}
+
+.lux-smooth-panel:active .main-action-btn {
+  transform: translateY(1px) scale(0.99);
+  box-shadow: 0 6px 16px rgba(28, 26, 23, 0.2);
+}
+
 .config-option-btn {
   position: relative;
 }

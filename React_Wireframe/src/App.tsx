@@ -78,7 +78,7 @@ function App() {
               }}
             />
             <div className="p-6 sm:p-7 flex flex-col items-center text-center min-h-[330px] sm:min-h-[360px]">
-              <div className="w-16 h-16 rounded-2xl bg-white/80 border border-[rgba(191,167,122,0.55)] flex items-center justify-center shadow-lg mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-white/80 border border-[rgba(191,167,122,0.55)] flex items-center justify-center shadow-lg mb-4 home-icon-chip icon-store">
                 <span className="text-2xl">🏬</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-semibold mb-3 lux-title">
@@ -88,8 +88,8 @@ function App() {
                 Indulge in a boutique, concierge-led try-on with professional lighting and precision shade matching.
               </p>
               <div className="mt-5 sm:mt-6">
-                <span className="main-action-btn">
-                  Enter Experience
+                <span className="main-action-btn cta-store">
+                  Enter In-Store
                 </span>
               </div>
             </div>
@@ -112,7 +112,7 @@ function App() {
               }}
             />
             <div className="p-6 sm:p-7 flex flex-col items-center text-center min-h-[330px] sm:min-h-[360px]">
-              <div className="w-16 h-16 rounded-2xl bg-white/80 border border-[rgba(191,167,122,0.55)] flex items-center justify-center shadow-lg mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-white/80 border border-[rgba(191,167,122,0.55)] flex items-center justify-center shadow-lg mb-4 home-icon-chip icon-inhouse">
                 <span className="text-2xl">🏡</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-semibold mb-3 lux-title">
@@ -122,8 +122,8 @@ function App() {
                 Your AI beauty device reads skin tone, undertone, lighting, and occasion to blend foundation and lipstick from your color cartridges for a perfect-match shade every time.
               </p>
               <div className="mt-5 sm:mt-6">
-                <span className="main-action-btn">
-                  Enter Experience
+                <span className="main-action-btn cta-inhouse">
+                  Enter In-house
                 </span>
               </div>
             </div>
@@ -146,7 +146,7 @@ function App() {
               }}
             />
             <div className="p-6 sm:p-7 flex flex-col items-center text-center min-h-[330px] sm:min-h-[360px]">
-              <div className="w-16 h-16 rounded-2xl bg-white/80 border border-[rgba(191,167,122,0.55)] flex items-center justify-center shadow-lg mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-white/80 border border-[rgba(191,167,122,0.55)] flex items-center justify-center shadow-lg mb-4 home-icon-chip icon-luxury">
                 <span className="text-2xl">🧴</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-semibold mb-3 lux-title">
@@ -156,8 +156,8 @@ function App() {
                 Already have the device? Explore different cartridges, buy the ones you need, and blend unique shades tailored to your style and skin profile.
               </p>
               <div className="mt-5 sm:mt-6">
-                <span className="main-action-btn">
-                  Enter Experience
+                <span className="main-action-btn cta-luxury">
+                  Enter Luxury
                 </span>
               </div>
             </div>
