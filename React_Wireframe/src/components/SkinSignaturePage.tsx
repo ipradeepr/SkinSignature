@@ -86,7 +86,6 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
   const [isAnalyzing] = useState(false);
   const [realTimeAnalysis, setRealTimeAnalysis] = useState(false);
   const [analysisResult] = useState<any>(null);
-  const [cartItems, setCartItems] = useState(0);
   const [selectedFoundation, setSelectedFoundation] = useState<FoundationSwatch | null>(null);
   const [selectedOccasion] = useState('office');
   const [isApplyingFoundation, setIsApplyingFoundation] = useState(false);
