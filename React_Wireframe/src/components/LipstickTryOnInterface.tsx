@@ -1,6 +1,7 @@
 import { useRef, useEffect, useMemo, useState, type FC } from "react";
 import { apiFetch, parseApiError } from "../config/api";
 import CartridgeMarquee, { type Cartridge } from './CartridgeMarquee';
+import skinSignatureDeviceImage from '../assets/SkinSignature.png';
 
 // Add hex to Lipstick interface
 interface Lipstick {
@@ -25,6 +26,8 @@ type LipstickCartridgeSet = {
   label: string;
   cartridges: Cartridge[];
 };
+
+const DEVICE_CART_STORAGE_KEY = 'ss-device-in-cart';
 
 const storeLipstickCartridges: Cartridge[] = [
   { id: 'L1', name: 'Rose Nude', hex: '#D2A679' },
@@ -162,6 +165,45 @@ const occasionOptions = [
   { value: 'festival', label: 'Festival' },
   { value: 'editorial', label: 'Editorial' },
 ];
+
+type LipstickBackendAnalysis = {
+  confidence?: number;
+  lip_detected?: boolean;
+  lip_info?: {
+    lip_type?: string;
+  };
+};
+
+function deriveLipstickProposals(
+  shades: MixedLipstick[],
+  analysis: LipstickBackendAnalysis,
+  skintone: SkinToneProfile,
+  occasion: string,
+  finish: 'matte' | 'glossy',
+): MixedLipstick[] {
+  if (shades.length === 0) return [];
+
+  const occasionOffset: Record<string, number> = {
+    casual: 0,
+    office: 6,
+    party: -8,
+    wedding: 8,
+    festival: -4,
+    editorial: -12,
+  };
+
+  const baseTarget = skintone === 'fair' ? 155 : skintone === 'deep' ? 105 : 128;
+  const finishOffset = finish === 'glossy' ? 4 : -2;
+  const lipType = String(analysis.lip_info?.lip_type || '').toLowerCase();
+  const lipTypeOffset = lipType.includes('thin') ? -3 : 2;
+  const confidence = Math.max(0, Math.min(100, Number(analysis.confidence || 0)));
+  const confidenceOffset = confidence >= 90 ? 0 : confidence >= 75 ? 2 : 5;
+  const targetLuma = baseTarget + (occasionOffset[occasion] ?? 0) + finishOffset + lipTypeOffset + confidenceOffset;
+
+  return [...shades]
+    .sort((left, right) => Math.abs(toneLuma(left.hex) - targetLuma) - Math.abs(toneLuma(right.hex) - targetLuma))
+    .slice(0, Math.min(6, shades.length));
+}
 
 // General palettes (used by store experience or as fallback)
 const colorPalettes: Record<string, Lipstick[]> = {
@@ -427,12 +469,16 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
   };
 
   const [selectedLipstick, setSelectedLipstick] = useState<MixedLipstick>(activeLipstickShades[0] || fallbackLipstick);
+  const [proposedLipstickShades, setProposedLipstickShades] = useState<MixedLipstick[]>([]);
+  const [analysisReady, setAnalysisReady] = useState(false);
+  const [isProposalLoading, setIsProposalLoading] = useState(false);
+  const [lipBackendAnalysis, setLipBackendAnalysis] = useState<LipstickBackendAnalysis | null>(null);
 
   useEffect(() => {
-    if (activeLipstickShades[0]) {
+    if (!analysisReady && activeLipstickShades[0]) {
       setSelectedLipstick(activeLipstickShades[0]);
     }
-  }, [activeLipstickShades]);
+  }, [activeLipstickShades, analysisReady]);
   const [lipstickOpacity, setLipstickOpacity] = useState(70);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -446,6 +492,21 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
   const [reservationMessage, setReservationMessage] = useState<string>('');
   const [reservationReference, setReservationReference] = useState<string>('');
   const [reservationLoading, setReservationLoading] = useState(false);
+  const [cartMessage, setCartMessage] = useState<string>('');
+  const [cartLoadingAll, setCartLoadingAll] = useState(false);
+  const [cartLoadingById, setCartLoadingById] = useState<Record<string, boolean>>({});
+  const [deviceCartLoading, setDeviceCartLoading] = useState(false);
+  const [deviceCartMessage, setDeviceCartMessage] = useState('');
+  const [isDeviceAlreadyInCart, setIsDeviceAlreadyInCart] = useState(false);
+  const [addedCartridgeIds, setAddedCartridgeIds] = useState<Record<string, boolean>>({});
+  const hasAddedCartridges = useMemo(
+    () => Object.values(addedCartridgeIds).some(Boolean),
+    [addedCartridgeIds],
+  );
+  const addedCartridgeStorageKey = useMemo(
+    () => `ss-added-cartridges:lipstick:${experienceType}:${launchMode}:${selectedLipstick.hex.toLowerCase()}:${finish}`,
+    [experienceType, launchMode, selectedLipstick.hex, finish],
+  );
   const [zoom, setZoom] = useState<number>(1);
   const [zoomTarget, setZoomTarget] = useState<number>(1);
   const rafZoomRef = useRef<number | null>(null);
@@ -523,6 +584,8 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     };
   }, [finish, lipstickOpacity, currentAnalysis.longLasting]);
 
+  const showProposedShadesSection = capturedImage && analysisReady && proposedLipstickShades.length > 0;
+
   const finishLightingProfile = useMemo(() => {
     const isEvening = lightingMode === 'evening';
     const baseAlpha = Math.max(0.1, Math.min(1, lipstickOpacity / 100));
@@ -542,6 +605,22 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     setReservationMessage('');
     setReservationReference('');
     try {
+      if (experienceType === 'in-house') {
+        await apiFetch('/device/dispense', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'lipstick',
+            selected_hex: selectedLipstick.hex,
+            cartridges: selectedLipstick.mix.map((mixItem) => mixItem.cartridgeId),
+            proportions: selectedLipstick.mix.map((mixItem) => mixItem.percentage),
+            quantity_ml: 0.2,
+          }),
+        });
+        setReservationMessage(`Dispense initiated for ${selectedLipstick.name}.`);
+        return;
+      }
+
       const response = await apiFetch('/v1/reserve-formula', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -575,8 +654,12 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
         `Reserved ${selectedLipstick.name}. ${primary?.cartridgeName || 'Primary cartridge'} suggested in ${primary?.etaDays || 18} days.`,
       );
     } catch (error) {
-      const reason = error instanceof Error ? error.message : 'Unknown reservation error';
-      setReservationMessage(`Unable to reserve this formula right now. (${reason})`);
+      const reason = error instanceof Error ? error.message : 'Unknown checkout error';
+      setReservationMessage(
+        experienceType === 'in-house'
+          ? `Unable to dispense the selected shade right now. (${reason})`
+          : `Unable to reserve this formula right now. (${reason})`,
+      );
     } finally {
       setReservationLoading(false);
     }
@@ -585,7 +668,203 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
   useEffect(() => {
     setReservationMessage('');
     setReservationReference('');
+    setCartMessage('');
+    setCartLoadingById({});
+    setDeviceCartMessage('');
   }, [selectedLipstick.name, finish]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = window.localStorage.getItem(addedCartridgeStorageKey);
+      if (!stored) {
+        setAddedCartridgeIds({});
+        return;
+      }
+      const parsed = JSON.parse(stored) as Record<string, boolean>;
+      if (parsed && typeof parsed === 'object') {
+        setAddedCartridgeIds(parsed);
+      } else {
+        setAddedCartridgeIds({});
+      }
+    } catch {
+      setAddedCartridgeIds({});
+    }
+  }, [addedCartridgeStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(addedCartridgeStorageKey, JSON.stringify(addedCartridgeIds));
+    } catch {
+      // ignore storage quota/privacy errors
+    }
+  }, [addedCartridgeStorageKey, addedCartridgeIds]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const syncDeviceCartState = () => {
+      try {
+        setIsDeviceAlreadyInCart(window.localStorage.getItem(DEVICE_CART_STORAGE_KEY) === 'true');
+      } catch {
+        setIsDeviceAlreadyInCart(false);
+      }
+    };
+
+    syncDeviceCartState();
+    window.addEventListener('storage', syncDeviceCartState);
+    return () => window.removeEventListener('storage', syncDeviceCartState);
+  }, []);
+
+  const handleResetAddedCartridges = () => {
+    setAddedCartridgeIds({});
+    setCartLoadingById({});
+    setCartMessage('Added cartridge markers reset for this shade.');
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.removeItem(addedCartridgeStorageKey);
+    } catch {
+      // ignore storage quota/privacy errors
+    }
+  };
+
+  const handleAddDeviceToCart = async () => {
+    setDeviceCartLoading(true);
+    setDeviceCartMessage('');
+    try {
+      const response = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_id: 'SS2025-DEVICE',
+          product_name: 'Skin Signature Device',
+          category: 'device',
+          product_type: 'skin-device',
+          launch_mode: launchMode,
+          quantity: 1,
+          price: 2499.0,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to add device right now.');
+      }
+
+      setIsDeviceAlreadyInCart(true);
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem(DEVICE_CART_STORAGE_KEY, 'true');
+        } catch {
+          // ignore storage quota/privacy errors
+        }
+      }
+      setDeviceCartMessage('Skin Signature Device added to cart.');
+    } catch {
+      setDeviceCartMessage('Could not add device right now. Please try again.');
+    } finally {
+      setDeviceCartLoading(false);
+    }
+  };
+
+  const addCartridgeToCart = async (cartridgeId: string, percentage: number) => {
+    const cartridgeName = cartridgeNameMap.get(cartridgeId) || cartridgeId;
+    setCartLoadingById((previous) => ({ ...previous, [cartridgeId]: true }));
+    try {
+      const response = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_id: `CRT-${cartridgeId}`,
+          product_name: `${cartridgeName} Cartridge`,
+          category: 'cartridge',
+          product_type: 'lipstick',
+          shade_name: selectedLipstick.name,
+          shade_hex: selectedLipstick.hex,
+          cartridge_id: cartridgeId,
+          cartridge_percentage: percentage,
+          finish,
+          experience_type: experienceType,
+          launch_mode: launchMode,
+          quantity: 1,
+          price: 0,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Cart API unavailable');
+      }
+
+      setAddedCartridgeIds((previous) => ({ ...previous, [cartridgeId]: true }));
+      setCartMessage(`${cartridgeName} added to cart.`);
+    } catch {
+      setCartMessage(`Unable to add ${cartridgeName} right now.`);
+    } finally {
+      setCartLoadingById((previous) => ({ ...previous, [cartridgeId]: false }));
+    }
+  };
+
+  const handleAddAllCartridgesToCart = async () => {
+    const uniqueMix = Array.from(
+      new Map(selectedLipstick.mix.map((mixItem) => [mixItem.cartridgeId, mixItem])).values(),
+    );
+
+    if (uniqueMix.length === 0) {
+      setCartMessage('No cartridges available to add.');
+      return;
+    }
+
+    setCartLoadingAll(true);
+    let successCount = 0;
+
+    for (const mixItem of uniqueMix) {
+      const cartridgeName = cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId;
+      try {
+        const response = await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: `CRT-${mixItem.cartridgeId}`,
+            product_name: `${cartridgeName} Cartridge`,
+            category: 'cartridge',
+            product_type: 'lipstick',
+            shade_name: selectedLipstick.name,
+            shade_hex: selectedLipstick.hex,
+            cartridge_id: mixItem.cartridgeId,
+            cartridge_percentage: mixItem.percentage,
+            finish,
+            experience_type: experienceType,
+            launch_mode: launchMode,
+            quantity: 1,
+            price: 0,
+          }),
+        });
+
+        if (response.ok) {
+          successCount += 1;
+        }
+      } catch {
+        // continue so user can still add available cartridges
+      }
+    }
+
+    if (successCount === uniqueMix.length) {
+      setAddedCartridgeIds((previous) => {
+        const next = { ...previous };
+        uniqueMix.forEach((mixItem) => {
+          next[mixItem.cartridgeId] = true;
+        });
+        return next;
+      });
+      setCartMessage(`All ${successCount} cartridges added to cart.`);
+    } else if (successCount > 0) {
+      setCartMessage(`${successCount} of ${uniqueMix.length} cartridges added to cart.`);
+    } else {
+      setCartMessage('Unable to add cartridges to cart right now.');
+    }
+
+    setCartLoadingAll(false);
+  };
 
   const startCamera = async () => {
     try {
@@ -736,12 +1015,12 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     // Validate image data before sending
     if (!imageData || imageData === '' || !imageData.includes('data:image')) {
       console.error('Invalid image data, skipping API call');
-      return;
+      return null;
     }
 
     const key = `${imageData.slice(0,64)}|${lipstickColor}|${opacity}|${finish}|${lightingMode}`;
     if (lastApplyKeyRef.current === key) {
-      return; // skip duplicate
+      return null; // skip duplicate
     }
     lastApplyKeyRef.current = key;
 
@@ -767,10 +1046,12 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
         setProcessedImage(result.processed_image);
         setLipDetected(result.lip_detected);
         setConfidence(result.confidence || 0);
+        return result as LipstickBackendAnalysis;
       } else {
         setErrorMessage(result.message || 'Failed to detect lips. Please try again.');
         setProcessedImage(null);
         setLipDetected(false);
+        return null;
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -778,6 +1059,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
       setErrorMessage(`Failed to process image: ${message}`);
       setProcessedImage(null);
       setLipDetected(false);
+      return null;
     } finally {
       setIsProcessing(false);
     }
@@ -865,7 +1147,31 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
     setCapturedImage(imageData);
     setErrorMessage('');
-    applyLipstickWithBackend(imageData, selectedLipstick.hex, lipstickOpacity);
+    setAnalysisReady(false);
+    setIsProposalLoading(true);
+
+    const backendAnalysis = await applyLipstickWithBackend(imageData, selectedLipstick.hex, lipstickOpacity);
+    if (!backendAnalysis || backendAnalysis.lip_detected === false) {
+      setProposedLipstickShades([]);
+      setAnalysisReady(false);
+      setIsProposalLoading(false);
+      return;
+    }
+
+    setLipBackendAnalysis(backendAnalysis);
+    const occasionProposals = deriveLipstickProposals(
+      activeLipstickShades,
+      backendAnalysis,
+      effectiveSkinTone,
+      selectedOccasion,
+      finish,
+    );
+    setProposedLipstickShades(occasionProposals);
+    if (occasionProposals[0]) {
+      setSelectedLipstick(occasionProposals[0]);
+    }
+    setAnalysisReady(occasionProposals.length > 0);
+    setIsProposalLoading(false);
   };
 
   // Retake photo - properly reset all states
@@ -887,6 +1193,10 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     setLipstickOpacity(70);
     setZoomTarget(1);
     setZoom(1);
+    setProposedLipstickShades([]);
+    setAnalysisReady(false);
+    setIsProposalLoading(false);
+    setLipBackendAnalysis(null);
     startCamera();
   };
 
@@ -941,6 +1251,22 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
       onClose();
     }
   };
+
+  useEffect(() => {
+    if (!capturedImage || !analysisReady || !lipBackendAnalysis) return;
+    const occasionProposals = deriveLipstickProposals(
+      activeLipstickShades,
+      lipBackendAnalysis,
+      effectiveSkinTone,
+      selectedOccasion,
+      finish,
+    );
+    setProposedLipstickShades(occasionProposals);
+    setSelectedLipstick((current) => {
+      const stillPresent = occasionProposals.find((shade) => shade.hex === current.hex);
+      return stillPresent || occasionProposals[0] || current;
+    });
+  }, [selectedOccasion, finish, capturedImage, analysisReady, lipBackendAnalysis, activeLipstickShades, effectiveSkinTone]);
 
   const isCartridgeSelectionMode = launchMode === 'cartridge';
 
@@ -1134,7 +1460,11 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                 </div>
               )}
 
-            <>
+            </div>
+          )}
+
+          {showProposedShadesSection && (
+            <div className="mt-4 w-full max-w-md mx-auto">
               <CartridgeMarquee
                 mode="lipstick"
                 targetHex={selectedLipstick.hex}
@@ -1149,7 +1479,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                 }
                 selectedShadeName={selectedLipstick.name}
                 cartridges={activeCartridges}
-                proposedShades={activeLipstickShades.map((shade) => ({
+                proposedShades={proposedLipstickShades.map((shade) => ({
                   name: shade.name,
                   hex: shade.hex,
                 }))}
@@ -1159,7 +1489,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   percentage: mixItem.percentage,
                 }))}
                 onShadeSelect={(shade) => {
-                  const found = activeLipstickShades.find((item) => item.name === shade.name);
+                  const found = proposedLipstickShades.find((item) => item.name === shade.name);
                   if (found) {
                     handleLipstickSelect(found);
                   }
@@ -1171,7 +1501,6 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   ? 'Selection source: this section shows the active 3-cartridge blend mapped to your selected lipstick shade.'
                   : 'Formula source: this section shows the physical 3-cartridge recipe for the selected lipstick shade.'}
               </div>
-            </>
             </div>
           )}
 
@@ -1217,61 +1546,65 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             </div>
           )}
 
-          {/* Selected Color Info */}
-          <div className="mt-4 w-full max-w-md mx-auto text-center">
-            <div className="lux-card rounded-xl px-6 py-4 lux-smooth-panel" key={`lip-selected-${selectedLipstick.hex}-${finish}`}>
-              <div className="font-bold text-lg text-[#6d4c1e] mb-2">Selected Shade</div>
-              <div className="flex items-center justify-center gap-3">
-                <div 
-                  className="w-8 h-8 rounded-full border-2 border-[#bfa77a]"
-                  style={{ backgroundColor: selectedLipstick.color }}
-                ></div>
-                <span className="font-semibold text-[#bfa77a]">{selectedLipstick.name} · {finish === 'matte' ? 'Matte' : 'Glossy'}</span>
+          {showProposedShadesSection && (
+            <>
+              {/* Selected Color Info */}
+              <div className="mt-4 w-full max-w-md mx-auto text-center">
+                <div className="lux-card rounded-xl px-6 py-4 lux-smooth-panel" key={`lip-selected-${selectedLipstick.hex}-${finish}`}>
+                  <div className="font-bold text-lg text-[#6d4c1e] mb-2">Selected Shade</div>
+                  <div className="flex items-center justify-center gap-3">
+                    <div 
+                      className="w-8 h-8 rounded-full border-2 border-[#bfa77a]"
+                      style={{ backgroundColor: selectedLipstick.color }}
+                    ></div>
+                    <span className="font-semibold text-[#bfa77a]">{selectedLipstick.name} · {finish === 'matte' ? 'Matte' : 'Glossy'}</span>
+                  </div>
+                  <div className="text-sm text-[#6d4c1e] mt-1">{selectedLipstick.hex}</div>
+                </div>
               </div>
-              <div className="text-sm text-[#6d4c1e] mt-1">{selectedLipstick.hex}</div>
-            </div>
-          </div>
 
-          {/* Lip Analysis Data */}
-          <div className="mt-4 w-full max-w-md mx-auto">
-            <div className="lux-card rounded-xl px-6 py-4 lux-smooth-panel" key={`lip-analysis-${selectedLipstick.hex}-${selectedOccasion}`}>
-              <div className="font-bold text-lg text-[#6d4c1e] mb-3">Lip Analysis</div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="font-semibold text-[#6d4c1e]">Lip Hydration:</span> 
-                  <span className="font-bold text-[#bfa77a]">{hydrationStory.label} <span className="text-[#6d4c1e]/70 font-medium">{hydrationStory.subtle}</span></span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-[#6d4c1e]">Color Match:</span> 
-                  <span className="font-bold text-[#bfa77a]">{colorMatchStory.label} <span className="text-[#6d4c1e]/70 font-medium">{colorMatchStory.subtle}</span></span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-[#6d4c1e]">Lip Volume:</span> 
-                  <span className="font-bold text-[#bfa77a]">{volumeStory.label} <span className="text-[#6d4c1e]/70 font-medium">{volumeStory.subtle}</span></span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-[#6d4c1e]">Skin Undertone:</span> 
-                  <span className="font-bold text-[#bfa77a]">{currentAnalysis.undertone}</span>
+              {/* Lip Analysis Data */}
+              <div className="mt-4 w-full max-w-md mx-auto">
+                <div className="lux-card rounded-xl px-6 py-4 lux-smooth-panel" key={`lip-analysis-${selectedLipstick.hex}-${selectedOccasion}`}>
+                  <div className="font-bold text-lg text-[#6d4c1e] mb-3">Recommended Lip Profile</div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-[#6d4c1e]">Lip Hydration:</span> 
+                      <span className="font-bold text-[#bfa77a]">{hydrationStory.label} <span className="text-[#6d4c1e]/70 font-medium">{hydrationStory.subtle}</span></span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-[#6d4c1e]">Color Match:</span> 
+                      <span className="font-bold text-[#bfa77a]">{colorMatchStory.label} <span className="text-[#6d4c1e]/70 font-medium">{colorMatchStory.subtle}</span></span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-[#6d4c1e]">Lip Volume:</span> 
+                      <span className="font-bold text-[#bfa77a]">{volumeStory.label} <span className="text-[#6d4c1e]/70 font-medium">{volumeStory.subtle}</span></span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-[#6d4c1e]">Skin Undertone:</span> 
+                      <span className="font-bold text-[#bfa77a]">{currentAnalysis.undertone}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Formulation */}
+                  <div className="mt-4 pt-3 border-t border-[#bfa77a]/30">
+                    <div className="font-bold text-sm text-[#6d4c1e] mb-2">Formula Details</div>
+                    <div className="flex justify-center gap-2 flex-wrap">
+                      <span className="px-3 py-1 rounded-full bg-[#f7e9f2] text-[#bfa77a] font-semibold border border-[#bfa77a] text-xs">
+                        Moisturizing ({currentAnalysis.moisturizing}%)
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-[#fdf6f0] text-[#bfa77a] font-semibold border border-[#bfa77a] text-xs">
+                        Long-Lasting ({currentAnalysis.longLasting}%)
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-[#e9e6f5] text-[#bfa77a] font-semibold border border-[#bfa77a] text-xs">
+                        UV Protection ({currentAnalysis.uvProtection}%)
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              {/* Formulation */}
-              <div className="mt-4 pt-3 border-t border-[#bfa77a]/30">
-                <div className="font-bold text-sm text-[#6d4c1e] mb-2">Formulation Analysis</div>
-                <div className="flex justify-center gap-2 flex-wrap">
-                  <span className="px-3 py-1 rounded-full bg-[#f7e9f2] text-[#bfa77a] font-semibold border border-[#bfa77a] text-xs">
-                    Moisturizing ({currentAnalysis.moisturizing}%)
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-[#fdf6f0] text-[#bfa77a] font-semibold border border-[#bfa77a] text-xs">
-                    Long-Lasting ({currentAnalysis.longLasting}%)
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-[#e9e6f5] text-[#bfa77a] font-semibold border border-[#bfa77a] text-xs">
-                    UV Protection ({currentAnalysis.uvProtection}%)
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
 
         </div>
 
@@ -1327,54 +1660,113 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
               </button>
             </div>
 
-            {/* Color Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
-              {activeLipstickShades.map((lipstick) => (
-                <button
-                  key={lipstick.name}
-                  onClick={() => handleLipstickSelect(lipstick)}
-                  disabled={isProcessing}
-                  className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] ${
-                    selectedLipstick.hex === lipstick.hex
-                      ? 'border-[#bfa16a] bg-white shadow-lg -translate-y-0.5'
-                      : 'border-[#d4af37] bg-white/70 hover:bg-white'
-                  } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  style={{
-                    background: 'rgba(255,255,255,0.8)',
-                    borderRadius: '16px',
-                    boxShadow: '0 2px 8px rgba(191, 161, 106, 0.08)',
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-full border-2 mb-2 shadow-md"
-                    style={{
-                      backgroundColor: lipstick.color,
-                      borderColor: '#bfa16a',
-                      boxShadow: '0 2px 8px rgba(191, 161, 106, 0.18)',
-                    }}
-                  ></div>
-                  {selectedLipstick.hex === lipstick.hex && (
-                    <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#1c1a17] text-[#f7f2ea] border border-[#bfa77a]">
-                      Selected
-                    </span>
-                  )}
-                  <span className="text-xs font-semibold text-[#6d4c1e] text-center leading-tight">
-                    {lipstick.name}
-                  </span>
-                </button>
-              ))}
-            </div>
+            {!capturedImage && (
+              <div className="lux-card rounded-xl px-6 py-4 mb-8">
+                <div className="font-bold text-base text-[#6d4c1e] mb-1">Personalized Shade Recommendations</div>
+                <div className="text-sm text-[#6d4c1e]/80">
+                  Capture a Monogram Portrait to unlock AI-curated, occasion-aware lipstick recommendations.
+                </div>
+              </div>
+            )}
 
-            <div className="mb-6">
-              <div className="lux-card rounded-xl px-6 py-4">
-                <div className="font-bold text-base text-[#6d4c1e] mb-2">Luxury Checkout Bridge</div>
+            {capturedImage && isProposalLoading && (
+              <div className="lux-card rounded-xl px-6 py-4 mb-8 flex items-center gap-2 text-[#6d4c1e]">
+                <div className="w-5 h-5 border-2 border-[#bfa77a] border-t-transparent rounded-full animate-spin"></div>
+                Preparing your personalized lip recommendations...
+              </div>
+            )}
+
+            {capturedImage && !isProposalLoading && !showProposedShadesSection && (
+              <div className="lux-card rounded-xl px-6 py-4 mb-8">
+                <div className="font-bold text-base text-[#6d4c1e] mb-1">Personalized Shade Recommendations</div>
+                <div className="text-sm text-[#6d4c1e]/80">
+                  Recommendations are not ready yet. Retake Monogram Portrait for a fresh recommendation.
+                </div>
+              </div>
+            )}
+
+            {showProposedShadesSection && (
+              <>
+                {/* Color Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                  {proposedLipstickShades.map((lipstick) => (
+                    <button
+                      key={lipstick.name}
+                      onClick={() => handleLipstickSelect(lipstick)}
+                      disabled={isProcessing}
+                      className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] ${
+                        selectedLipstick.hex === lipstick.hex
+                          ? 'border-[#bfa16a] bg-white shadow-lg -translate-y-0.5'
+                          : 'border-[#d4af37] bg-white/70 hover:bg-white'
+                      } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      style={{
+                        background: 'rgba(255,255,255,0.8)',
+                        borderRadius: '16px',
+                        boxShadow: '0 2px 8px rgba(191, 161, 106, 0.08)',
+                      }}
+                    >
+                      <div
+                        className="w-12 h-12 rounded-full border-2 mb-2 shadow-md"
+                        style={{
+                          backgroundColor: lipstick.color,
+                          borderColor: '#bfa16a',
+                          boxShadow: '0 2px 8px rgba(191, 161, 106, 0.18)',
+                        }}
+                      ></div>
+                      {selectedLipstick.hex === lipstick.hex && (
+                        <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#1c1a17] text-[#f7f2ea] border border-[#bfa77a]">
+                          Selected
+                        </span>
+                      )}
+                      <span className="text-xs font-semibold text-[#6d4c1e] text-center leading-tight">
+                        {lipstick.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {showProposedShadesSection && (
+              <>
+                <div className="mb-6">
+                  <div className="lux-card rounded-xl px-6 py-4">
+                <div className="font-bold text-base text-[#6d4c1e] mb-2">Checkout Assistant</div>
+                <button
+                  type="button"
+                  onClick={handleAddAllCartridgesToCart}
+                  className="main-action-btn w-full mb-2"
+                  disabled={cartLoadingAll}
+                >
+                  {cartLoadingAll ? 'Adding Cartridges...' : 'Add All Cartridges to Cart'}
+                </button>
+                {cartMessage && (
+                  <div className="mb-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                    {cartMessage}
+                  </div>
+                )}
+                {hasAddedCartridges && (
+                  <button
+                    type="button"
+                    onClick={handleResetAddedCartridges}
+                    className="mb-2 text-xs font-semibold text-[#6d4c1e] underline underline-offset-2 hover:text-[#bfa77a] lux-cta-transition"
+                  >
+                    Reset added items
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleReserveFormula}
                   className="main-action-btn w-full"
                   disabled={reservationLoading}
                 >
-                  {reservationLoading ? 'Reserving Formula...' : 'Reserve this Formula'}
+                  {reservationLoading
+                    ? experienceType === 'in-house'
+                      ? 'Dispensing Selected Shade...'
+                      : 'Reserving Formula...'
+                    : experienceType === 'in-house'
+                      ? 'Dispense Selected Shade'
+                      : 'Reserve this Formula'}
                 </button>
                 {reservationMessage && (
                   <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
@@ -1385,20 +1777,72 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   </div>
                 )}
 
+                {experienceType !== 'in-house' && (
+                  <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
+                    <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Buy This Device</div>
+                    <div className="rounded-xl border border-[#d9c6a4] bg-white/90 p-3">
+                      <img
+                        src={skinSignatureDeviceImage}
+                        alt="Skin Signature Device"
+                        className="w-full h-28 object-contain rounded-lg bg-[#fdf6f0] border border-[#eadcc6]"
+                      />
+                      <p className="mt-2 text-xs text-[#6d4c1e]">
+                        Bring the couture complexion studio home—custom shade precision, every day.
+                      </p>
+                      {isDeviceAlreadyInCart && (
+                        <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                          This device is already in your cart.
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleAddDeviceToCart}
+                        className="main-action-btn w-full mt-3"
+                        disabled={deviceCartLoading}
+                      >
+                        {deviceCartLoading
+                          ? 'Adding Device...'
+                          : isDeviceAlreadyInCart
+                            ? 'Add Device to Cart Again'
+                            : 'Add Device to Cart'}
+                      </button>
+                      {deviceCartMessage && (
+                        <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                          {deviceCartMessage}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
-                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Cartridge Replenishment</div>
+                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Cartridge Refill Plan</div>
                   <div className="space-y-1 text-xs text-[#6d4c1e]">
                     {replenishmentPlan.map((item) => (
                       <div key={item.cartridgeId} className="flex items-center justify-between gap-2">
                         <span className="truncate">{item.cartridgeName} · {item.priority}</span>
-                        <span className="font-semibold text-[#bfa77a] shrink-0">{item.etaDays} days</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-semibold text-[#bfa77a]">{item.etaDays} days</span>
+                          <button
+                            type="button"
+                            onClick={() => addCartridgeToCart(item.cartridgeId, item.percentage)}
+                            className="text-[10px] px-2 py-1 rounded-md border border-[#bfa77a] text-[#6d4c1e] bg-white/90 hover:bg-[#f7f2ea] lux-cta-transition"
+                            disabled={!!cartLoadingById[item.cartridgeId] || cartLoadingAll || !!addedCartridgeIds[item.cartridgeId]}
+                          >
+                            {cartLoadingById[item.cartridgeId]
+                              ? 'Adding...'
+                              : addedCartridgeIds[item.cartridgeId]
+                                ? 'Added'
+                                : 'Add to Cart'}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
-                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Expected Wear Profile</div>
+                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Wear Guidance</div>
                   <div className="space-y-1 text-xs text-[#6d4c1e]">
                     <div className="flex justify-between">
                       <span>Longevity</span>
@@ -1409,30 +1853,32 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   </div>
                 </div>
               </div>
-            </div>
+                </div>
             
-            {/* Luxury Brand Suggestions */}
-            <div className="lux-card rounded-2xl p-6">
-              <div className="font-semibold lux-title text-lg mb-4">
-                Luxury Brand Suggestions
-              </div>
-              <ul className="lux-muted text-sm leading-relaxed ml-4">
-                {(luxurySuggestions[effectiveSkinTone][selectedOccasion] || luxurySuggestions[effectiveSkinTone]['office']).map((suggestion) => (
-                  <li key={suggestion}>• {suggestion}</li>
-                ))}
-              </ul>
-            </div>
+                {/* Luxury Brand Suggestions */}
+                <div className="lux-card rounded-2xl p-6">
+                  <div className="font-semibold lux-title text-lg mb-4">
+                    Premium Shade Suggestions
+                  </div>
+                  <ul className="lux-muted text-sm leading-relaxed ml-4">
+                    {(luxurySuggestions[effectiveSkinTone][selectedOccasion] || luxurySuggestions[effectiveSkinTone]['office']).map((suggestion) => (
+                      <li key={suggestion}>• {suggestion}</li>
+                    ))}
+                  </ul>
+                </div>
 
-            {/* Tips */}
-            <div className="mt-6 lux-card rounded-xl p-4">
-              <h4 className="font-bold text-[#6d4c1e] mb-2">💡 Try-On Tips</h4>
-              <ul className="text-sm text-[#6d4c1e] space-y-1">
-                <li>• Ensure good lighting for best results</li>
-                <li>• Keep your lips relaxed or slightly parted</li>
-                <li>• Adjust intensity for your preference</li>
-                <li>• Try different shades to find your perfect match</li>
-              </ul>
-            </div>
+                {/* Tips */}
+                <div className="mt-6 lux-card rounded-xl p-4">
+                  <h4 className="font-bold text-[#6d4c1e] mb-2">Application Tips</h4>
+                  <ul className="text-sm text-[#6d4c1e] space-y-1">
+                    <li>• Ensure good lighting for best results</li>
+                    <li>• Keep your lips relaxed or slightly parted</li>
+                    <li>• Adjust intensity for your preference</li>
+                    <li>• Try different shades to find your perfect match</li>
+                  </ul>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useRef, useEffect, useMemo, useState, type FC } from "react";
 import { apiFetch, parseApiError } from "../config/api";
 import FoundationSwatchPanel from './FoundationSwatchPanel';
 import CartridgeMarquee, { type Cartridge } from './CartridgeMarquee';
+import skinSignatureDeviceImage from '../assets/SkinSignature.png';
 
 type ShadeMix = {
   cartridgeId: string;
@@ -22,6 +23,8 @@ type CartridgeSet = {
   label: string;
   cartridges: Cartridge[];
 };
+
+const DEVICE_CART_STORAGE_KEY = 'ss-device-in-cart';
 
 const storeCartridges: Cartridge[] = [
   { id: 'F1', name: 'Porcelain Base', hex: '#F2D6C9' },
@@ -161,6 +164,64 @@ function adaptFoundationShadesForTone(shades: FoundationShade[], skinTone: SkinT
   });
 }
 
+const occasionOptions = [
+  { value: 'casual', label: 'Casual' },
+  { value: 'party', label: 'Party' },
+  { value: 'office', label: 'Office' },
+  { value: 'wedding', label: 'Wedding' },
+  { value: 'festival', label: 'Festival' },
+  { value: 'editorial', label: 'Editorial' },
+];
+
+type FoundationAnalysisPayload = {
+  skin_tone?: string;
+  undertone?: string;
+  confidence?: number;
+  suggested_shades?: string[];
+  [key: string]: unknown;
+};
+
+function deriveOccasionAwareShades(
+  shades: FoundationShade[],
+  analysis: FoundationAnalysisPayload,
+  occasion: string,
+): FoundationShade[] {
+  if (shades.length === 0) return [];
+
+  const occasionLumaOffsets: Record<string, number> = {
+    casual: 0,
+    office: 4,
+    party: -6,
+    wedding: 8,
+    festival: -2,
+    editorial: -10,
+  };
+
+  const analysisTone = normalizeSkinToneProfile(String(analysis.skin_tone || 'medium'));
+  const baseTarget = analysisTone === 'fair' ? 195 : analysisTone === 'deep' ? 110 : 150;
+  const targetLuma = baseTarget + (occasionLumaOffsets[occasion] ?? 0);
+  const undertone = String(analysis.undertone || '').toLowerCase();
+
+  const warmKeywords = ['warm', 'honey', 'gold', 'amber', 'caramel', 'desert', 'tawny'];
+  const coolKeywords = ['cool', 'rose', 'porcelain', 'ivory'];
+  const neutralKeywords = ['neutral', 'beige', 'linen'];
+
+  const scoreShade = (shade: FoundationShade): number => {
+    const lumaDelta = Math.abs(estimateLuma(shade.hex) - targetLuma);
+    const shadeName = shade.name.toLowerCase();
+    const nameBonus = undertone.includes('warm')
+      ? (warmKeywords.some((token) => shadeName.includes(token)) ? -12 : 0)
+      : undertone.includes('cool')
+        ? (coolKeywords.some((token) => shadeName.includes(token)) ? -12 : 0)
+        : (neutralKeywords.some((token) => shadeName.includes(token)) ? -10 : 0);
+    return lumaDelta + nameBonus;
+  };
+
+  return [...shades]
+    .sort((left, right) => scoreShade(left) - scoreShade(right))
+    .slice(0, Math.min(6, shades.length));
+}
+
 function coerceScore(value: unknown, fallback = 0): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -199,6 +260,7 @@ interface FoundationTryOnInterfaceProps {
 
 const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, experienceType = 'store', skintone = 'medium', toneConfidence = 0, launchMode = 'store' }) => {
   const [selectedInhouseSetId, setSelectedInhouseSetId] = useState<'set-a' | 'set-b'>('set-a');
+  const [selectedOccasion, setSelectedOccasion] = useState(occasionOptions[0].value);
   const activeInhouseSet = useMemo(
     () => inhouseCartridgeSets.find((set) => set.id === selectedInhouseSetId) || inhouseCartridgeSets[0],
     [selectedInhouseSetId],
@@ -225,9 +287,27 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
   const [confidence, setConfidence] = useState<number>(0);
   const [fullAnalysis, setFullAnalysis] = useState<any | null>(null);
   const [fullAnalysisLoading, setFullAnalysisLoading] = useState(false);
+  const [isProposalLoading, setIsProposalLoading] = useState(false);
+  const [analysisReady, setAnalysisReady] = useState(false);
+  const [proposedShades, setProposedShades] = useState<FoundationShade[]>([]);
   const [reservationMessage, setReservationMessage] = useState<string>('');
   const [reservationReference, setReservationReference] = useState<string>('');
   const [reservationLoading, setReservationLoading] = useState(false);
+  const [cartMessage, setCartMessage] = useState<string>('');
+  const [cartLoadingAll, setCartLoadingAll] = useState(false);
+  const [cartLoadingById, setCartLoadingById] = useState<Record<string, boolean>>({});
+  const [deviceCartLoading, setDeviceCartLoading] = useState(false);
+  const [deviceCartMessage, setDeviceCartMessage] = useState('');
+  const [isDeviceAlreadyInCart, setIsDeviceAlreadyInCart] = useState(false);
+  const [addedCartridgeIds, setAddedCartridgeIds] = useState<Record<string, boolean>>({});
+  const hasAddedCartridges = useMemo(
+    () => Object.values(addedCartridgeIds).some(Boolean),
+    [addedCartridgeIds],
+  );
+  const addedCartridgeStorageKey = useMemo(
+    () => `ss-added-cartridges:foundation:${experienceType}:${launchMode}:${selectedShade.hex.toLowerCase()}:${finish.toLowerCase()}`,
+    [experienceType, launchMode, selectedShade.hex, finish],
+  );
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const liveOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -493,7 +573,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
   };
 
   // 📸 Capture Photo button logic
-  const captureSnapshot = () => {
+  const captureSnapshot = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -505,8 +585,59 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     const imageData = canvas.toDataURL('image/jpeg');
     setCapturedImage(imageData);
     setErrorMessage('');
-    // Always use hex code
-    applyFoundationWithBackend(imageData, selectedShade.hex);
+    setAnalysisReady(false);
+    setIsProposalLoading(true);
+
+    try {
+      // Always use hex code
+      await applyFoundationWithBackend(imageData, selectedShade.hex);
+
+      const analysisResponse = await apiFetch('/v1/skin-full-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: imageData,
+          foundation_color: selectedShade.hex,
+          finish,
+        }),
+      });
+
+      const analysisResult = await analysisResponse.json() as {
+        success?: boolean;
+        analysis?: FoundationAnalysisPayload;
+        message?: string;
+      };
+
+      if (!analysisResponse.ok || !analysisResult.success || !analysisResult.analysis) {
+        throw new Error(analysisResult.message || 'Skin analysis failed.');
+      }
+
+      const analysis = analysisResult.analysis;
+      setFullAnalysis(analysis);
+
+      const analyzedTone = normalizeSkinToneProfile(String(analysis.skin_tone || effectiveSkinTone));
+      setDetectedSkinTone(analyzedTone);
+
+      const baseShades = experienceType === 'store'
+        ? buildStoreShades(storeShadeRecipes)
+        : buildInhouseShades(activeInhouseSet);
+      const toneAdapted = adaptFoundationShadesForTone(baseShades, analyzedTone);
+      const occasionShades = deriveOccasionAwareShades(toneAdapted, analysis, selectedOccasion);
+
+      setProposedShades(occasionShades);
+      setSelectedShade((previous) => {
+        const matched = occasionShades.find((shade) => shade.hex.toLowerCase() === previous.hex.toLowerCase());
+        return matched || occasionShades[0] || previous;
+      });
+      setAnalysisReady(occasionShades.length > 0);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'Unable to generate proposed shades.';
+      setErrorMessage(`Captured image processed, but proposal analysis failed. (${reason})`);
+      setProposedShades([]);
+      setAnalysisReady(false);
+    } finally {
+      setIsProposalLoading(false);
+    }
   };
 
   // Retake photo
@@ -520,6 +651,9 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     setIsProcessing(false);
     setFullAnalysis(null);
     setFullAnalysisLoading(false);
+    setIsProposalLoading(false);
+    setAnalysisReady(false);
+    setProposedShades([]);
     setFinish('Satin');
     setLightingMode('day');
     setSelectedShade(foundationShades[0]);
@@ -780,6 +914,9 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     setErrorMessage('');
     setSelectedShade(foundationShades[0]);
     setShadeSelected(true);
+    setIsProposalLoading(false);
+    setAnalysisReady(false);
+    setProposedShades([]);
     if (onClose) {
       onClose();
     }
@@ -816,21 +953,39 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     }
   };
 
+  useEffect(() => {
+    if (!capturedImage || !analysisReady || !fullAnalysis || fullAnalysis.error) return;
+
+    const analysisPayload = fullAnalysis as FoundationAnalysisPayload;
+    const analyzedTone = normalizeSkinToneProfile(String(analysisPayload.skin_tone || effectiveSkinTone));
+    const baseShades = experienceType === 'store'
+      ? buildStoreShades(storeShadeRecipes)
+      : buildInhouseShades(activeInhouseSet);
+    const toneAdapted = adaptFoundationShadesForTone(baseShades, analyzedTone);
+    const occasionShades = deriveOccasionAwareShades(toneAdapted, analysisPayload, selectedOccasion);
+
+    setProposedShades(occasionShades);
+    setSelectedShade((previous) => {
+      const matched = occasionShades.find((shade) => shade.hex.toLowerCase() === previous.hex.toLowerCase());
+      return matched || occasionShades[0] || previous;
+    });
+  }, [selectedOccasion, capturedImage, analysisReady, fullAnalysis, experienceType, activeInhouseSet, effectiveSkinTone]);
+
   const cartridgeNameMap = useMemo(
     () => new Map(activeCartridges.map((cartridge) => [cartridge.id, cartridge.name])),
     [activeCartridges],
   );
 
   const marqueeProposedShades = useMemo(
-    () => foundationShades.map((shade) => ({ name: shade.name, hex: shade.hex })),
-    [foundationShades],
+    () => proposedShades.map((shade) => ({ name: shade.name, hex: shade.hex })),
+    [proposedShades],
   );
 
   const alternativeShades = useMemo(() => {
-    if (foundationShades.length <= 1) return [] as Array<{ shade: FoundationShade; deltaLuma: number }>;
+    if (proposedShades.length <= 1) return [] as Array<{ shade: FoundationShade; deltaLuma: number }>;
 
     const selectedLuma = estimateLuma(selectedShade.hex);
-    const candidates = foundationShades
+    const candidates = proposedShades
       .filter((shade) => shade.name !== selectedShade.name)
       .map((shade) => ({
         shade,
@@ -859,7 +1014,9 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
       seen.add(candidate.shade.name);
       return true;
     }).slice(0, 2);
-  }, [foundationShades, selectedShade]);
+  }, [proposedShades, selectedShade]);
+
+  const showProposedShadesSection = capturedImage && analysisReady && proposedShades.length > 0;
 
   const isCartridgeSelectionMode = launchMode === 'cartridge';
 
@@ -968,6 +1125,22 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     setReservationMessage('');
     setReservationReference('');
     try {
+      if (experienceType === 'in-house') {
+        await apiFetch('/device/dispense', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'foundation',
+            selected_hex: selectedShade.hex,
+            cartridges: selectedShade.mix.map((mixItem) => mixItem.cartridgeId),
+            proportions: selectedShade.mix.map((mixItem) => mixItem.percentage),
+            quantity_ml: 0.5,
+          }),
+        });
+        setReservationMessage(`Dispense initiated for ${selectedShade.name}.`);
+        return;
+      }
+
       const response = await apiFetch('/v1/reserve-formula', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1001,8 +1174,12 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
         `Reserved ${selectedShade.name}. ${primary?.cartridgeName || 'Primary cartridge'} suggested in ${primary?.etaDays || 21} days.`,
       );
     } catch (error) {
-      const reason = error instanceof Error ? error.message : 'Unknown reservation error';
-      setReservationMessage(`Unable to reserve this formula right now. (${reason})`);
+      const reason = error instanceof Error ? error.message : 'Unknown checkout error';
+      setReservationMessage(
+        experienceType === 'in-house'
+          ? `Unable to dispense the selected shade right now. (${reason})`
+          : `Unable to reserve this formula right now. (${reason})`,
+      );
     } finally {
       setReservationLoading(false);
     }
@@ -1011,7 +1188,203 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
   useEffect(() => {
     setReservationMessage('');
     setReservationReference('');
+    setCartMessage('');
+    setCartLoadingById({});
+    setDeviceCartMessage('');
   }, [selectedShade.name, finish]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = window.localStorage.getItem(addedCartridgeStorageKey);
+      if (!stored) {
+        setAddedCartridgeIds({});
+        return;
+      }
+      const parsed = JSON.parse(stored) as Record<string, boolean>;
+      if (parsed && typeof parsed === 'object') {
+        setAddedCartridgeIds(parsed);
+      } else {
+        setAddedCartridgeIds({});
+      }
+    } catch {
+      setAddedCartridgeIds({});
+    }
+  }, [addedCartridgeStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(addedCartridgeStorageKey, JSON.stringify(addedCartridgeIds));
+    } catch {
+      // ignore storage quota/privacy errors
+    }
+  }, [addedCartridgeStorageKey, addedCartridgeIds]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const syncDeviceCartState = () => {
+      try {
+        setIsDeviceAlreadyInCart(window.localStorage.getItem(DEVICE_CART_STORAGE_KEY) === 'true');
+      } catch {
+        setIsDeviceAlreadyInCart(false);
+      }
+    };
+
+    syncDeviceCartState();
+    window.addEventListener('storage', syncDeviceCartState);
+    return () => window.removeEventListener('storage', syncDeviceCartState);
+  }, []);
+
+  const handleResetAddedCartridges = () => {
+    setAddedCartridgeIds({});
+    setCartLoadingById({});
+    setCartMessage('Added cartridge markers reset for this shade.');
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.removeItem(addedCartridgeStorageKey);
+    } catch {
+      // ignore storage quota/privacy errors
+    }
+  };
+
+  const handleAddDeviceToCart = async () => {
+    setDeviceCartLoading(true);
+    setDeviceCartMessage('');
+    try {
+      const response = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_id: 'SS2025-DEVICE',
+          product_name: 'Skin Signature Device',
+          category: 'device',
+          product_type: 'skin-device',
+          launch_mode: launchMode,
+          quantity: 1,
+          price: 2499.0,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to add device right now.');
+      }
+
+      setIsDeviceAlreadyInCart(true);
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem(DEVICE_CART_STORAGE_KEY, 'true');
+        } catch {
+          // ignore storage quota/privacy errors
+        }
+      }
+      setDeviceCartMessage('Skin Signature Device added to cart.');
+    } catch {
+      setDeviceCartMessage('Could not add device right now. Please try again.');
+    } finally {
+      setDeviceCartLoading(false);
+    }
+  };
+
+  const addCartridgeToCart = async (cartridgeId: string, percentage: number) => {
+    const cartridgeName = cartridgeNameMap.get(cartridgeId) || cartridgeId;
+    setCartLoadingById((previous) => ({ ...previous, [cartridgeId]: true }));
+    try {
+      const response = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_id: `CRT-${cartridgeId}`,
+          product_name: `${cartridgeName} Cartridge`,
+          category: 'cartridge',
+          product_type: 'foundation',
+          shade_name: selectedShade.name,
+          shade_hex: selectedShade.hex,
+          cartridge_id: cartridgeId,
+          cartridge_percentage: percentage,
+          finish,
+          experience_type: experienceType,
+          launch_mode: launchMode,
+          quantity: 1,
+          price: 0,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Cart API unavailable');
+      }
+
+      setAddedCartridgeIds((previous) => ({ ...previous, [cartridgeId]: true }));
+      setCartMessage(`${cartridgeName} added to cart.`);
+    } catch {
+      setCartMessage(`Unable to add ${cartridgeName} right now.`);
+    } finally {
+      setCartLoadingById((previous) => ({ ...previous, [cartridgeId]: false }));
+    }
+  };
+
+  const handleAddAllCartridgesToCart = async () => {
+    const uniqueMix = Array.from(
+      new Map(selectedShade.mix.map((mixItem) => [mixItem.cartridgeId, mixItem])).values(),
+    );
+
+    if (uniqueMix.length === 0) {
+      setCartMessage('No cartridges available to add.');
+      return;
+    }
+
+    setCartLoadingAll(true);
+    let successCount = 0;
+
+    for (const mixItem of uniqueMix) {
+      const cartridgeName = cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId;
+      try {
+        const response = await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: `CRT-${mixItem.cartridgeId}`,
+            product_name: `${cartridgeName} Cartridge`,
+            category: 'cartridge',
+            product_type: 'foundation',
+            shade_name: selectedShade.name,
+            shade_hex: selectedShade.hex,
+            cartridge_id: mixItem.cartridgeId,
+            cartridge_percentage: mixItem.percentage,
+            finish,
+            experience_type: experienceType,
+            launch_mode: launchMode,
+            quantity: 1,
+            price: 0,
+          }),
+        });
+
+        if (response.ok) {
+          successCount += 1;
+        }
+      } catch {
+        // continue so user can still add available cartridges
+      }
+    }
+
+    if (successCount === uniqueMix.length) {
+      setAddedCartridgeIds((previous) => {
+        const next = { ...previous };
+        uniqueMix.forEach((mixItem) => {
+          next[mixItem.cartridgeId] = true;
+        });
+        return next;
+      });
+      setCartMessage(`All ${successCount} cartridges added to cart.`);
+    } else if (successCount > 0) {
+      setCartMessage(`${successCount} of ${uniqueMix.length} cartridges added to cart.`);
+    } else {
+      setCartMessage('Unable to add cartridges to cart right now.');
+    }
+
+    setCartLoadingAll(false);
+  };
 
   return (
     <div className="fixed inset-0 z-50 lux-page overflow-y-auto px-4 sm:px-6 py-6">
@@ -1279,7 +1652,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
               </div>
             )}
 
-            {!capturedImage && (
+            {showProposedShadesSection && (
               <>
                 <CartridgeMarquee
                   mode="foundation"
@@ -1302,7 +1675,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                     percentage: mixItem.percentage,
                   }))}
                   onShadeSelect={(shade) => {
-                    const found = foundationShades.find((item) => item.name === shade.name);
+                    const found = proposedShades.find((item) => item.name === shade.name);
                     if (found) {
                       handleShadeSelect(found);
                     }
@@ -1317,50 +1690,67 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
               </>
             )}
 
-            {/* Shade preview section (hidden in store buy flow to avoid duplication with cartridge formula) */}
-            {experienceType === 'in-house' && !isCartridgeSelectionMode && (
-              <div className="mt-6 w-full max-w-md mx-auto flex flex-col items-center">
-              {/* Single, centered label for swatch panel */}
-              <div className="font-bold text-xl text-[#bfa77a] mb-3 text-center">
-                {`${activeInhouseSet.label} shade gradients`}
-              </div>
-              <div className="text-xs text-[#6d4c1e] mb-2 text-center">
-                {isCartridgeSelectionMode
-                  ? 'These previews are generated from your selected cartridges with light-to-deep blend progression.'
-                  : 'These shades are generated from your 3 cartridges with different light-to-dark mix ratios.'}
-              </div>
-              {/* Swatch panel: horizontal scroll if overflow */}
-              <div className="w-full overflow-x-auto pb-2">
-                <div className="flex flex-nowrap gap-3 px-1" style={{ minWidth: 0 }}>
-                  <FoundationSwatchPanel
-                    foundationSwatches={foundationShades}
-                    selectedFoundation={selectedShade}
-                    onSelect={handleShadeSelect}
-                    isApplying={!!capturedImage && isProcessing}
-                  />
-                </div>
-              </div>
-              {/* Selected Shade Info */}
-              <div className="lux-card rounded-xl px-6 py-4 text-center mt-4 w-full max-w-[400px] lux-smooth-panel" key={`selected-shade-${selectedShade.hex}`}>
-                <div className="font-bold text-lg text-[#6d4c1e] mb-2">Selected Shade</div>
-                <div className="flex items-center justify-center gap-3">
-                  <div 
-                    className="w-8 h-8 rounded-full border-2 border-[#bfa77a] shadow"
-                    style={{ backgroundColor: selectedShade.color }}
-                    title={selectedShade.name}
-                  ></div>
-                  <span className="font-semibold text-[#bfa77a]">{selectedShade.name}</span>
-                </div>
-                <div className="text-sm text-[#6d4c1e] mt-1">{selectedShade.hex}</div>
-              </div>
-              </div>
-            )}
           </div>
           {/* Right Section - Recommended Foundation Details */}
           <div className="flex-1 flex flex-col items-center justify-start min-w-0">
             <div className="w-full max-w-md mx-auto mt-0 sticky top-10">
-              <div className="lux-card rounded-xl px-6 py-4 lux-smooth-panel" key={`details-${selectedShade.hex}-${finish}-${lightingMode}`}>
-                <div className="font-bold text-lg text-[#6d4c1e] mb-2">Recommended Foundation Details Section</div>
+              <div className="mb-4 flex justify-center items-center">
+                <label htmlFor="foundation-occasion-select" className="mr-2 font-semibold lux-muted">
+                  Occasion:
+                </label>
+                <select
+                  id="foundation-occasion-select"
+                  value={selectedOccasion}
+                  onChange={(e) => setSelectedOccasion(e.target.value)}
+                  className="border border-[#bfa77a] rounded-lg px-4 py-2 bg-white/90 text-[#5b4632] font-medium shadow"
+                >
+                  {occasionOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {!capturedImage && (
+                <div className="lux-card rounded-xl px-6 py-4">
+                  <div className="font-bold text-base text-[#6d4c1e] mb-1">Personalized Shade Recommendations</div>
+                  <div className="text-sm text-[#6d4c1e]/80">
+                    Capture a Monogram Portrait to unlock AI-curated, occasion-aware foundation recommendations.
+                  </div>
+                </div>
+              )}
+
+              {capturedImage && isProposalLoading && (
+                <div className="lux-card rounded-xl px-6 py-4 flex items-center gap-2 text-[#6d4c1e]">
+                  <div className="w-5 h-5 border-2 border-[#bfa77a] border-t-transparent rounded-full animate-spin"></div>
+                  Preparing your personalized complexion recommendations...
+                </div>
+              )}
+
+              {capturedImage && !isProposalLoading && !showProposedShadesSection && (
+                <div className="lux-card rounded-xl px-6 py-4 mb-4">
+                  <div className="font-bold text-base text-[#6d4c1e] mb-1">Personalized Shade Recommendations</div>
+                  <div className="text-sm text-[#6d4c1e]/80">
+                    Recommendations are not ready yet. Retake Monogram Portrait for a fresh recommendation.
+                  </div>
+                </div>
+              )}
+
+              {showProposedShadesSection && (
+                <>
+                  <div className="lux-card rounded-xl px-6 py-4 mb-4">
+                    <div className="text-xs text-[#6d4c1e]/80 mb-2 text-center">
+                      AI-curated from your captured portrait and selected occasion.
+                    </div>
+                    <FoundationSwatchPanel
+                      foundationSwatches={proposedShades}
+                      selectedFoundation={selectedShade}
+                      onSelect={handleShadeSelect}
+                      isApplying={!!capturedImage && isProcessing}
+                    />
+                  </div>
+
+                  <div className="lux-card rounded-xl px-6 py-4 lux-smooth-panel" key={`details-${selectedShade.hex}-${finish}-${lightingMode}`}>
+                <div className="font-bold text-lg text-[#6d4c1e] mb-2">Recommended Foundation Profile</div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="font-semibold text-[#6d4c1e]">Shade:</span>
@@ -1378,7 +1768,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                   ))}
                 </div>
                 <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
-                  <div className="font-bold text-sm text-[#6d4c1e] mb-2">Live Analysis Section</div>
+                  <div className="font-bold text-sm text-[#6d4c1e] mb-2">Skin Analysis</div>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="font-semibold text-[#6d4c1e]">Skin Index:</span>
@@ -1396,49 +1786,77 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                 </div>
               </div>
 
-              {alternativeShades.length > 0 && (
-                <div className="lux-card rounded-xl px-6 py-4 mt-4">
-                  <div className="font-bold text-base text-[#6d4c1e] mb-2">Closest Alternative Shades</div>
-                  <div className="text-xs text-[#6d4c1e]/80 mb-3">
-                    Quick switch options near your current match.
-                  </div>
-                  <div className="space-y-2">
-                    {alternativeShades.map((candidate) => (
-                      <button
-                        key={candidate.shade.name}
-                        type="button"
-                        onClick={() => handleShadeSelect(candidate.shade)}
-                        className="w-full flex items-center justify-between rounded-lg border border-[#d9c6a4] bg-white/90 px-3 py-2 text-left hover:bg-white lux-cta-transition"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            className="h-4 w-4 rounded-full border border-[#bfa77a]/70 shrink-0"
-                            style={{ backgroundColor: candidate.shade.hex }}
-                          />
-                          <span className="text-sm font-semibold text-[#6d4c1e] truncate">
-                            {candidate.shade.name}
-                          </span>
-                        </div>
-                        <span className="text-xs font-semibold text-[#bfa77a] shrink-0">
-                          {candidate.deltaLuma > 0
-                            ? `Lighter +${candidate.deltaLuma}`
-                            : `Darker ${candidate.deltaLuma}`}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                  {alternativeShades.length > 0 && (
+                    <div className="lux-card rounded-xl px-6 py-4 mt-4">
+                      <div className="font-bold text-base text-[#6d4c1e] mb-2">Similar Shade Options</div>
+                      <div className="text-xs text-[#6d4c1e]/80 mb-3">
+                        Quick switch options near your current match.
+                      </div>
+                      <div className="space-y-2">
+                        {alternativeShades.map((candidate) => (
+                          <button
+                            key={candidate.shade.name}
+                            type="button"
+                            onClick={() => handleShadeSelect(candidate.shade)}
+                            className="w-full flex items-center justify-between rounded-lg border border-[#d9c6a4] bg-white/90 px-3 py-2 text-left hover:bg-white lux-cta-transition"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className="h-4 w-4 rounded-full border border-[#bfa77a]/70 shrink-0"
+                                style={{ backgroundColor: candidate.shade.hex }}
+                              />
+                              <span className="text-sm font-semibold text-[#6d4c1e] truncate">
+                                {candidate.shade.name}
+                              </span>
+                            </div>
+                            <span className="text-xs font-semibold text-[#bfa77a] shrink-0">
+                              {candidate.deltaLuma > 0
+                                ? `Lighter +${candidate.deltaLuma}`
+                                : `Darker ${candidate.deltaLuma}`}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-              <div className="lux-card rounded-xl px-6 py-4 mt-4">
-                <div className="font-bold text-base text-[#6d4c1e] mb-2">Luxury Checkout Bridge</div>
+                  <div className="lux-card rounded-xl px-6 py-4 mt-4">
+                <div className="font-bold text-base text-[#6d4c1e] mb-2">Checkout Assistant</div>
+                <button
+                  type="button"
+                  onClick={handleAddAllCartridgesToCart}
+                  className="main-action-btn w-full mb-2"
+                  disabled={cartLoadingAll}
+                >
+                  {cartLoadingAll ? 'Adding Cartridges...' : 'Add All Cartridges to Cart'}
+                </button>
+                {cartMessage && (
+                  <div className="mb-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                    {cartMessage}
+                  </div>
+                )}
+                {hasAddedCartridges && (
+                  <button
+                    type="button"
+                    onClick={handleResetAddedCartridges}
+                    className="mb-2 text-xs font-semibold text-[#6d4c1e] underline underline-offset-2 hover:text-[#bfa77a] lux-cta-transition"
+                  >
+                    Reset added items
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleReserveFormula}
                   className="main-action-btn w-full"
                   disabled={reservationLoading}
                 >
-                  {reservationLoading ? 'Reserving Formula...' : 'Reserve this Formula'}
+                  {reservationLoading
+                    ? experienceType === 'in-house'
+                      ? 'Dispensing Selected Shade...'
+                      : 'Reserving Formula...'
+                    : experienceType === 'in-house'
+                      ? 'Dispense Selected Shade'
+                      : 'Reserve this Formula'}
                 </button>
                 {reservationMessage && (
                   <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
@@ -1449,20 +1867,72 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                   </div>
                 )}
 
+                {experienceType !== 'in-house' && (
+                  <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
+                    <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Buy This Device</div>
+                    <div className="rounded-xl border border-[#d9c6a4] bg-white/90 p-3">
+                      <img
+                        src={skinSignatureDeviceImage}
+                        alt="Skin Signature Device"
+                        className="w-full h-28 object-contain rounded-lg bg-[#fdf6f0] border border-[#eadcc6]"
+                      />
+                      <p className="mt-2 text-xs text-[#6d4c1e]">
+                        Bring the couture complexion studio home—custom shade precision, every day.
+                      </p>
+                      {isDeviceAlreadyInCart && (
+                        <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                          This device is already in your cart.
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleAddDeviceToCart}
+                        className="main-action-btn w-full mt-3"
+                        disabled={deviceCartLoading}
+                      >
+                        {deviceCartLoading
+                          ? 'Adding Device...'
+                          : isDeviceAlreadyInCart
+                            ? 'Add Device to Cart Again'
+                            : 'Add Device to Cart'}
+                      </button>
+                      {deviceCartMessage && (
+                        <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                          {deviceCartMessage}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
-                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Cartridge Replenishment</div>
+                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Cartridge Refill Plan</div>
                   <div className="space-y-1 text-xs text-[#6d4c1e]">
                     {replenishmentPlan.map((item) => (
                       <div key={item.cartridgeId} className="flex items-center justify-between gap-2">
                         <span className="truncate">{item.cartridgeName} · {item.priority}</span>
-                        <span className="font-semibold text-[#bfa77a] shrink-0">{item.etaDays} days</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-semibold text-[#bfa77a]">{item.etaDays} days</span>
+                          <button
+                            type="button"
+                            onClick={() => addCartridgeToCart(item.cartridgeId, item.percentage)}
+                            className="text-[10px] px-2 py-1 rounded-md border border-[#bfa77a] text-[#6d4c1e] bg-white/90 hover:bg-[#f7f2ea] lux-cta-transition"
+                            disabled={!!cartLoadingById[item.cartridgeId] || cartLoadingAll || !!addedCartridgeIds[item.cartridgeId]}
+                          >
+                            {cartLoadingById[item.cartridgeId]
+                              ? 'Adding...'
+                              : addedCartridgeIds[item.cartridgeId]
+                                ? 'Added'
+                                : 'Add to Cart'}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
-                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Expected Wear Profile</div>
+                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Wear Guidance</div>
                   <div className="space-y-1 text-xs text-[#6d4c1e]">
                     <div className="flex justify-between">
                       <span>Longevity</span>
@@ -1473,6 +1943,8 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                   </div>
                 </div>
               </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -1492,7 +1964,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                   <>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div><span className="font-semibold text-[#6d4c1e]">Complexion Index:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.complexionIndex}%</span></div>
-                      <div><span className="font-semibold text-[#6d4c1e]">Atelier Tier:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.tier}</span></div>
+                      <div><span className="font-semibold text-[#6d4c1e]">Luxury Tier:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.tier}</span></div>
                       <div><span className="font-semibold text-[#6d4c1e]">Skin Tone Hex:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.toneHex}</span></div>
                       <div><span className="font-semibold text-[#6d4c1e]">Undertone:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.undertone}</span></div>
                       <div><span className="font-semibold text-[#6d4c1e]">Texture:</span> <span className="text-[#bfa77a]">{scoreStory(luxuryAnalysisView.textureScore).label} <span className="text-[#6d4c1e]/70">{scoreStory(luxuryAnalysisView.textureScore).subtle}</span></span></div>
@@ -1502,7 +1974,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                     </div>
 
                     <div className="mt-4 p-3 rounded-lg border border-[#d9c6a4] bg-[#fdf6f0]">
-                      <div className="font-semibold text-[#6d4c1e] mb-1">Atelier Formula</div>
+                      <div className="font-semibold text-[#6d4c1e] mb-1">Recommended Formula</div>
                       <div className="text-sm text-[#6d4c1e]">
                         {selectedShade.name} · {finish} finish · Confidence {luxuryAnalysisView.confidenceValue}%
                       </div>
