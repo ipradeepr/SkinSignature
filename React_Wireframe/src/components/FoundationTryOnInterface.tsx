@@ -1429,12 +1429,12 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
               </div>
               {/* Finish selector above camera */}
               <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                   <label className="text-sm font-semibold text-[#6d4c1e]">Finish</label>
                   <select
                     value={finish}
                     onChange={(e) => setFinish(e.target.value as 'Matte' | 'Satin' | 'Radiant')}
-                    className="text-sm border border-[#bfa77a] rounded-lg px-3 py-1 bg-white/95 text-[#5b4632] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                    className="w-full sm:w-auto text-sm border border-[#bfa77a] rounded-lg px-3 py-1 bg-white/95 text-[#5b4632] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
                   >
                     <option>Matte</option>
                     <option>Satin</option>
@@ -1540,7 +1540,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                 <div className="mt-6 w-full max-w-md mx-auto">
                   <div className="lux-card rounded-xl p-4">
                     <div className="font-bold text-[#bfa77a] mb-2">Processed Image Preview</div>
-                    <div className="flex justify-between items-center mb-3">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
                       <div>
                         <h3 className="font-bold text-lg text-[#6d4c1e]">
                           Your Look: {selectedShade.name}
@@ -1609,7 +1609,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                       </div>
                     )}
                     {/* Legacy buttons retained */}
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex flex-col sm:flex-row gap-2">
                       <button 
                         className="flex-1 text-xs py-1 px-2 rounded border border-[#bfa77a] text-[#bfa77a] hover:bg-[#bfa77a]/10 lux-cta-transition"
                         onClick={() => setProcessedImage(capturedImage)}
@@ -1632,7 +1632,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
               <div className="mt-4 w-full max-w-md mx-auto">
                 <div className="lux-card rounded-xl p-3">
                   <div className="text-xs font-semibold text-[#6d4c1e] mb-2">In-home cartridge sets</div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {inhouseCartridgeSets.map((set) => (
                       <button
                         key={set.id}
@@ -1693,16 +1693,16 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
           </div>
           {/* Right Section - Recommended Foundation Details */}
           <div className="flex-1 flex flex-col items-center justify-start min-w-0">
-            <div className="w-full max-w-md mx-auto mt-0 sticky top-10">
-              <div className="mb-4 flex justify-center items-center">
-                <label htmlFor="foundation-occasion-select" className="mr-2 font-semibold lux-muted">
+            <div className="w-full max-w-md mx-auto mt-0 lg:sticky lg:top-10">
+              <div className="mb-4 flex flex-col sm:flex-row sm:justify-center sm:items-center items-start gap-2">
+                <label htmlFor="foundation-occasion-select" className="sm:mr-2 font-semibold lux-muted">
                   Occasion:
                 </label>
                 <select
                   id="foundation-occasion-select"
                   value={selectedOccasion}
                   onChange={(e) => setSelectedOccasion(e.target.value)}
-                  className="border border-[#bfa77a] rounded-lg px-4 py-2 bg-white/90 text-[#5b4632] font-medium shadow"
+                  className="w-full sm:w-auto border border-[#bfa77a] rounded-lg px-4 py-2 bg-white/90 text-[#5b4632] font-medium shadow"
                 >
                   {occasionOptions.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>

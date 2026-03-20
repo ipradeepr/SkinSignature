@@ -66,13 +66,13 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
 
       {/* Configuration Selection - Buttons (Updated) */}
       <div className="mb-6">
-        <div className="flex items-center justify-between gap-3 mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
           <span className="font-semibold block lux-title">Configuration</span>
-          <span className="lux-pill px-3 py-1 text-xs font-semibold tracking-wide uppercase">
+          <span className="lux-pill px-3 py-1 text-xs font-semibold tracking-wide uppercase self-start sm:self-auto">
             Selected: {selectedConfig === 'foundation' ? 'Foundation' : 'Lipstick'}
           </span>
         </div>
-        <div className="flex gap-2 w-full">
+        <div className="flex flex-col sm:flex-row gap-2 w-full">
           <button
             className={`main-action-btn config-option-btn flex-1 w-full${selectedConfig === 'foundation' ? ' active' : ''}`}
             type="button"

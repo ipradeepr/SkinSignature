@@ -1304,7 +1304,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             </div>
 
             <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-[160px] items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <label className="text-sm font-semibold text-[#6d4c1e]">Lighting</label>
               </div>
               <div className="inline-flex rounded-full border border-[#d9c6a4] overflow-hidden self-start sm:self-auto">
@@ -1381,7 +1381,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             {capturedImage && (
               <div className="w-full">
                 <div className="lux-card rounded-xl p-4">
-                  <div className="flex justify-between items-center mb-3">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
                     <div>
                       <h3 className="font-bold text-lg text-[#6d4c1e]">
                         {selectedLipstick.name}
@@ -1424,7 +1424,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
               {experienceType === 'in-house' && (
                 <div className="lux-card rounded-xl p-3 mb-3">
                   <div className="text-xs font-semibold text-[#6d4c1e] mb-2">In-home lipstick cartridge sets</div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {inhouseLipstickSets.map((set) => (
                       <button
                         key={set.id}
@@ -1611,15 +1611,15 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             </div>
             
             {/* Occasion & Finish Controls */}
-            <div className="mb-4 flex justify-center items-center">
-              <label htmlFor="occasion-select" className="mr-2 font-semibold lux-muted">
+            <div className="mb-4 flex flex-col sm:flex-row sm:justify-center sm:items-center items-start gap-2">
+              <label htmlFor="occasion-select" className="sm:mr-2 font-semibold lux-muted">
                 Occasion:
               </label>
               <select
                 id="occasion-select"
                 value={selectedOccasion}
                 onChange={e => setSelectedOccasion(e.target.value)}
-                className="border border-[#bfa77a] rounded-lg px-4 py-2 bg-white/90 text-[#5b4632] font-medium shadow"
+                className="w-full sm:w-auto border border-[#bfa77a] rounded-lg px-4 py-2 bg-white/90 text-[#5b4632] font-medium shadow"
               >
                 {occasionOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -1627,16 +1627,16 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
               </select>
             </div>
 
-            <div className="-mt-2 mb-6 flex items-center justify-center gap-2">
+            <div className="-mt-2 mb-6 grid grid-cols-2 gap-2">
               <button
                 onClick={() => setFinish('matte')}
-                className={`px-4 py-2 rounded-l-lg border lux-cta-transition ${finish==='matte' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
+                className={`w-full px-4 py-2 rounded-lg sm:rounded-l-lg sm:rounded-r-none border lux-cta-transition ${finish==='matte' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
               >
                 Matte
               </button>
               <button
                 onClick={() => setFinish('glossy')}
-                className={`px-4 py-2 rounded-r-lg border lux-cta-transition ${finish==='glossy' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
+                className={`w-full px-4 py-2 rounded-lg sm:rounded-r-lg sm:rounded-l-none border lux-cta-transition ${finish==='glossy' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
               >
                 Glossy
               </button>
@@ -1673,7 +1673,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   <span className="font-semibold text-[#6d4c1e]">AI detected:</span> {effectiveSkinTone} skin tone · {selectedOccasion} occasion · {finish} finish. Shades ranked by undertone harmony and luma proximity.
                 </div>
                 {/* Color Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6 mb-8">
                   {proposedLipstickShades.map((lipstick) => (
                     <button
                       key={lipstick.name}
