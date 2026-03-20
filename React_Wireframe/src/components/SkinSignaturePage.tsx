@@ -461,7 +461,7 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
     <div className="min-h-screen lux-page flex flex-col items-center py-6 overflow-x-hidden">
       {/* --- Full-width Header --- */}
       <div className="w-full max-w-none">
-        <Header cartItems={cartItems} onHomeClick={handleHeaderHomeClick} />
+        <Header cartItems={0} onHomeClick={handleHeaderHomeClick} />
       </div>
       {/* --- Home View --- */}
       {currentView === 'home' && (
