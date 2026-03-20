@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Tuple, List
@@ -8,6 +9,8 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime
 from uuid import uuid4
+import os
+import html
 
 # Optional heavy dependencies (demo-friendly fallbacks if missing)
 try:
@@ -27,28 +30,37 @@ try:
 except Exception:
     np = None  # type: ignore
 
-try:
-    import torch  # type: ignore
-    from torchvision import transforms  # type: ignore
-    from PIL import Image as PILImage
-except Exception:
-    torch = None  # type: ignore
-    transforms = None  # type: ignore
-    PILImage = Image
+ENABLE_TORCH_FOUNDATION_MODEL = os.getenv("ENABLE_TORCH_FOUNDATION_MODEL", "false").strip().lower() in {"1", "true", "yes", "on"}
+torch = None  # type: ignore
+transforms = None  # type: ignore
+PILImage = Image
+foundation_style_model = None
+TORCH_IMPORT_ERROR = None
 
 app = FastAPI()
 
-# Enable CORS for local dev (frontend at Vite 5173)
+# CORS configuration (dev + production)
+DEFAULT_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "http://0.0.0.0:3000",
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+    "http://0.0.0.0:5173",
+]
+
+env_allowed = os.getenv("ALLOWED_ORIGINS", "")
+extra_allowed_origins = [origin.strip() for origin in env_allowed.split(",") if origin.strip()]
+frontend_url = os.getenv("FRONTEND_URL", "").strip()
+if frontend_url:
+    extra_allowed_origins.append(frontend_url)
+
+ALLOWED_ORIGINS = list(dict.fromkeys(DEFAULT_ALLOWED_ORIGINS + extra_allowed_origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:3000",
-        "http://localhost:3000",
-        "http://0.0.0.0:3000",
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
-        "http://0.0.0.0:5173",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -84,12 +96,11 @@ class ReserveFormulaRequest(BaseModel):
     cartridges: List[ReserveFormulaMixItem] = []
     expected_wear_profile: Optional[Dict[str, Any]] = None
 
-# Simple health endpoint for connectivity + diagnostics
-@app.get("/v1/health")
-async def health():
+def _collect_health_payload() -> Dict[str, Any]:
     # Attempt lazy load for reporting if not initialized yet
     if 'mp_face_mesh' not in globals() or mp_face_mesh is None:
         globals()['mp_face_mesh'] = _load_mediapipe_face_mesh_module()
+
     return {
         "status": "ok",
         "diagnostics": {
@@ -102,6 +113,8 @@ async def health():
             "facemesh_module_load_error": FACE_MESH_MODULE_LOAD_ERROR,
             "facemesh_init_error": FACE_MESH_INIT_ERROR,
             "torch": bool(torch),
+            "torch_enabled": ENABLE_TORCH_FOUNDATION_MODEL,
+            "torch_import_error": TORCH_IMPORT_ERROR,
             "versions": {
                 "opencv": getattr(cv2, "__version__", None) if cv2 else None,
                 "numpy": getattr(np, "__version__", None) if np else None,
@@ -111,6 +124,263 @@ async def health():
             "mode": "full" if ('mp_face_mesh' in globals() and mp_face_mesh is not None and cv2 is not None and np is not None) else "demo"
         }
     }
+
+
+def _render_health_html(payload: Dict[str, Any]) -> str:
+        diagnostics = payload.get("diagnostics", {})
+        versions = diagnostics.get("versions", {}) if isinstance(diagnostics.get("versions", {}), dict) else {}
+
+        def _ok_badge(ok: bool) -> str:
+                color = "#137333" if ok else "#c62828"
+                bg = "#e6f4ea" if ok else "#fde8e8"
+                label = "OK" if ok else "Issue"
+                return f'<span style="padding:4px 10px;border-radius:999px;background:{bg};color:{color};font-weight:600;font-size:12px;">{label}</span>'
+
+        checks = [
+                ("API Status", payload.get("status") == "ok", payload.get("status", "unknown")),
+                ("OpenCV", bool(diagnostics.get("opencv")), diagnostics.get("opencv")),
+                ("NumPy", bool(diagnostics.get("numpy")), diagnostics.get("numpy")),
+                ("MediaPipe", bool(diagnostics.get("mediapipe")), diagnostics.get("mediapipe")),
+                (
+                        "Face Mesh Module",
+                        bool(diagnostics.get("mediapipe_face_mesh_available")),
+                        diagnostics.get("mediapipe_face_mesh_available"),
+                ),
+                (
+                        "Face Mesh Ready",
+                        bool(diagnostics.get("facemesh_instantiated")),
+                        diagnostics.get("facemesh_instantiated"),
+                ),
+                ("Torch", bool(diagnostics.get("torch")), diagnostics.get("torch")),
+        ]
+
+        checks_rows = "".join(
+                f"""
+                <tr>
+                    <td>{html.escape(str(label))}</td>
+                    <td>{_ok_badge(ok)}</td>
+                    <td><code>{html.escape(str(value))}</code></td>
+                </tr>
+                """
+                for label, ok, value in checks
+        )
+
+        versions_rows = "".join(
+                f"""
+                <tr>
+                    <td>{html.escape(str(name))}</td>
+                    <td><code>{html.escape(str(version if version is not None else 'n/a'))}</code></td>
+                </tr>
+                """
+                for name, version in versions.items()
+        )
+
+        error_map = [
+                ("MediaPipe Import Error", diagnostics.get("mediapipe_import_error")),
+                ("Face Mesh Module Load Error", diagnostics.get("facemesh_module_load_error")),
+                ("Face Mesh Init Error", diagnostics.get("facemesh_init_error")),
+        ]
+
+        error_rows = "".join(
+                f"""
+                <tr>
+                    <td>{html.escape(str(name))}</td>
+                    <td><code>{html.escape(str(err if err is not None else 'none'))}</code></td>
+                </tr>
+                """
+                for name, err in error_map
+        )
+
+        mode_value = html.escape(str(diagnostics.get("mode", "unknown")))
+
+        return f"""
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Skin Signature Health</title>
+        <style>
+            :root {{
+                color-scheme: light;
+                --bg: #f6f2e9;
+                --card: #ffffff;
+                --text: #2e2415;
+                --muted: #6d5b3e;
+                --accent: #bfa77a;
+                --border: #e7dcc8;
+            }}
+            * {{ box-sizing: border-box; }}
+            body {{
+                margin: 0;
+                background: linear-gradient(180deg, #f9f6ef 0%, var(--bg) 100%);
+                color: var(--text);
+                font-family: Inter, Segoe UI, Arial, sans-serif;
+            }}
+            .topbar {{
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                border-bottom: 1px solid var(--border);
+                background: rgba(255, 255, 255, 0.92);
+                backdrop-filter: blur(8px);
+            }}
+            .topbar-inner {{
+                max-width: 980px;
+                margin: 0 auto;
+                padding: 12px 16px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+            }}
+            .brand {{
+                font-size: 14px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                color: #6d4c1e;
+                text-decoration: none;
+            }}
+            .top-links {{
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }}
+            .top-links a {{
+                color: #6d4c1e;
+                text-decoration: none;
+                border: 1px solid var(--accent);
+                border-radius: 8px;
+                padding: 7px 11px;
+                font-size: 12px;
+                font-weight: 600;
+                background: #fff;
+            }}
+            .top-links a:hover {{ background: #f8f2e7; }}
+            .container {{ max-width: 980px; margin: 0 auto; padding: 28px 16px 40px; }}
+            .hero {{
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 20px;
+                margin-bottom: 16px;
+            }}
+            h1 {{ margin: 0 0 6px; font-size: 28px; }}
+            .sub {{ color: var(--muted); font-size: 14px; }}
+            .chip {{
+                display: inline-block;
+                margin-top: 10px;
+                padding: 6px 10px;
+                border-radius: 999px;
+                border: 1px solid var(--border);
+                background: #fbf9f4;
+                font-size: 12px;
+            }}
+            .section {{
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 16px;
+                margin-top: 12px;
+            }}
+            h2 {{ margin: 0 0 12px; font-size: 18px; }}
+            table {{ width: 100%; border-collapse: collapse; }}
+            th, td {{ padding: 10px 8px; border-top: 1px solid var(--border); text-align: left; vertical-align: top; }}
+            th {{ color: var(--muted); font-size: 12px; letter-spacing: .03em; text-transform: uppercase; border-top: none; }}
+            code {{
+                background: #faf7f1;
+                border: 1px solid #eee3cf;
+                border-radius: 6px;
+                padding: 2px 6px;
+                font-size: 12px;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }}
+            .footer-links {{ margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }}
+            .footer-links a {{
+                color: #6d4c1e;
+                text-decoration: none;
+                border: 1px solid var(--accent);
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 13px;
+                background: #fff;
+            }}
+            .footer-links a:hover {{ background: #f8f2e7; }}
+        </style>
+    </head>
+    <body>
+        <header class="topbar">
+            <div class="topbar-inner">
+                <a class="brand" href="/home">SKIN SIGNATURE</a>
+                <div class="top-links">
+                    <a href="/home">Home</a>
+                    <a href="/try-on">Try-On</a>
+                </div>
+            </div>
+        </header>
+        <main class="container">
+            <section class="hero">
+                <h1>Skin Signature Service Health</h1>
+                <div class="sub">Readable diagnostics dashboard for the backend runtime and dependencies.</div>
+                <div class="chip">Mode: <strong>{mode_value}</strong></div>
+            </section>
+
+            <section class="section">
+                <h2>Readiness Checks</h2>
+                <table>
+                    <thead>
+                        <tr><th>Check</th><th>Status</th><th>Value</th></tr>
+                    </thead>
+                    <tbody>
+                        {checks_rows}
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2>Dependency Versions</h2>
+                <table>
+                    <thead>
+                        <tr><th>Dependency</th><th>Version</th></tr>
+                    </thead>
+                    <tbody>
+                        {versions_rows}
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2>Error Details</h2>
+                <table>
+                    <thead>
+                        <tr><th>Diagnostic</th><th>Message</th></tr>
+                    </thead>
+                    <tbody>
+                        {error_rows}
+                    </tbody>
+                </table>
+            </section>
+
+            <div class="footer-links">
+                <a href="/v1/health">Raw JSON Health</a>
+            </div>
+        </main>
+    </body>
+</html>
+"""
+
+
+# Simple health endpoint for connectivity + diagnostics
+@app.get("/v1/health")
+async def health():
+        return _collect_health_payload()
+
+
+@app.get("/v1/health/view", response_class=HTMLResponse)
+async def health_view():
+        payload = _collect_health_payload()
+        return HTMLResponse(content=_render_health_html(payload))
 
 
 # Initialize MediaPipe Face Mesh with robust import across versions
@@ -627,22 +897,43 @@ async def apply_lipstick(data: LipstickApplicationRequest):
             "lip_detected": False
         }
 
-# Add neural/deep learning foundation logic (PyTorch)
-try:
-    if torch is not None:
-        foundation_style_model = torch.jit.load("foundation_style_model.pt")
+def _load_foundation_model_if_enabled():
+    """Lazy-load Torch stack and model only when explicitly enabled."""
+    global torch, transforms, PILImage, foundation_style_model, TORCH_IMPORT_ERROR
+
+    if not ENABLE_TORCH_FOUNDATION_MODEL:
+        return None
+
+    if foundation_style_model is not None:
+        return foundation_style_model
+
+    if TORCH_IMPORT_ERROR is not None:
+        return None
+
+    try:
+        import torch as _torch  # type: ignore
+        from torchvision import transforms as _transforms  # type: ignore
+        from PIL import Image as _PILImage
+
+        torch = _torch
+        transforms = _transforms
+        PILImage = _PILImage
+
+        foundation_style_model = torch.jit.load("foundation_style_model.pt", map_location="cpu")
         foundation_style_model.eval()
-    else:
+        return foundation_style_model
+    except Exception as e:
+        TORCH_IMPORT_ERROR = repr(e)
         foundation_style_model = None
-except Exception:
-    foundation_style_model = None
+        return None
 
 def apply_foundation_neural(img_np, foundation_hex: str, mask):
     """
     Apply foundation using a neural/deep learning model (PyTorch).
     Only applies to masked region.
     """
-    if foundation_style_model is None:
+    model = _load_foundation_model_if_enabled()
+    if model is None or torch is None or transforms is None:
         return None
 
     # Convert numpy image to PIL and then to tensor
@@ -662,7 +953,7 @@ def apply_foundation_neural(img_np, foundation_hex: str, mask):
 
     # Run model (assume model expects image, color, mask)
     with torch.no_grad():
-        output = foundation_style_model(img_tensor, color_tensor, mask_tensor)
+        output = model(img_tensor, color_tensor, mask_tensor)
     output_img = output.squeeze(0).permute(1, 2, 0).cpu().numpy()
     output_img = (output_img * 255).clip(0, 255).astype(np.uint8)
     output_img = cv2.cvtColor(output_img, cv2.COLOR_RGB2BGR)
@@ -961,6 +1252,125 @@ def _lab_blend_with_finish(img_bgr, target_bgr: Tuple[int, int, int], mask, fini
     mask_3c = np.dstack([feather] * 3)
     composite = (img_bgr.astype(np.float32) * (1 - mask_3c) + result_bgr.astype(np.float32) * mask_3c).astype(np.uint8)
     return composite
+
+
+def _clamp_score(value: float, low: int = 35, high: int = 98) -> int:
+    return int(max(low, min(high, round(float(value)))))
+
+
+def _rgb_to_hex(rgb: Tuple[int, int, int]) -> str:
+    r, g, b = [int(max(0, min(255, c))) for c in rgb]
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def compute_skin_metrics(img_bgr, face_mask) -> Dict[str, Any]:
+    """
+    Compute resilient skin metrics used by /v1/skin-full-analysis.
+
+    Returns stable keys consumed by the frontend complexion dossier UI.
+    """
+    default_metrics: Dict[str, Any] = {
+        "skin_tone_hex": "#D4A574",
+        "skin_tone": "Medium",
+        "undertone": "Neutral",
+        "texture_score": 82,
+        "evenness_score": 84,
+        "hydration_score": 79,
+        "pore_refinement_score": 81,
+        "confidence": 88,
+        "suggested_shades": ["LV-FND-014", "LV-FND-001"],
+        "luxury_recommendations": [
+            "Use a silk-based primer to smooth texture before application.",
+            "Blend in thin layers for a naturally even finish.",
+            "Set the T-zone lightly while keeping cheek high points luminous.",
+        ],
+    }
+
+    if cv2 is None or np is None or img_bgr is None or face_mask is None:
+        return default_metrics
+
+    try:
+        if len(face_mask.shape) == 3:
+            mask = cv2.cvtColor(face_mask, cv2.COLOR_BGR2GRAY)
+        else:
+            mask = face_mask.copy()
+        mask = (mask > 10).astype(np.uint8)
+
+        area = int(np.count_nonzero(mask))
+        if area < 250:
+            return default_metrics
+
+        rgb_img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+        pixels_rgb = rgb_img[mask > 0]
+        mean_rgb = tuple(int(v) for v in np.mean(pixels_rgb, axis=0))
+        skin_tone_hex = _rgb_to_hex((mean_rgb[0], mean_rgb[1], mean_rgb[2]))
+
+        lab = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2LAB)
+        L = lab[:, :, 0].astype(np.float32)
+        A = lab[:, :, 1].astype(np.float32)
+        B = lab[:, :, 2].astype(np.float32)
+
+        Lm = L[mask > 0]
+        Am = A[mask > 0]
+        Bm = B[mask > 0]
+
+        l_mean = float(np.mean(Lm))
+        l_std = float(np.std(Lm))
+        a_bias = float(np.mean(Am) - 128.0)
+        b_bias = float(np.mean(Bm) - 128.0)
+
+        if l_mean < 105:
+            skin_tone = "Deep"
+        elif l_mean < 155:
+            skin_tone = "Medium"
+        else:
+            skin_tone = "Fair"
+
+        if b_bias > max(2.5, abs(a_bias) * 0.9):
+            undertone = "Warm"
+        elif a_bias > max(2.5, abs(b_bias) * 0.9):
+            undertone = "Cool"
+        else:
+            undertone = "Neutral"
+
+        gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+        gm = gray[mask > 0].astype(np.float32)
+
+        lap_var = float(cv2.Laplacian(gray, cv2.CV_32F)[mask > 0].var())
+        texture_score = _clamp_score(65.0 + min(28.0, lap_var / 14.0))
+
+        evenness_score = _clamp_score(96.0 - (l_std * 1.3))
+
+        hydration_score = _clamp_score(52.0 + (float(np.median(gm)) * 0.22) - (l_std * 0.55))
+
+        pore_refinement_score = _clamp_score(92.0 - min(40.0, lap_var / 10.5))
+
+        confidence = _clamp_score(78.0 + min(18.0, area / float(mask.size) * 30.0), 70, 97)
+
+        tone_bucket = "014" if skin_tone == "Fair" else "021" if skin_tone == "Deep" else "009"
+        alt_bucket = "001" if undertone == "Neutral" else "005" if undertone == "Warm" else "017"
+        suggested_shades = [f"LV-FND-{tone_bucket}", f"LV-FND-{alt_bucket}"]
+
+        luxury_recommendations = [
+            "Use a thin first pass, then build coverage only where needed.",
+            f"{undertone} undertone profile: keep neck blending soft for a seamless transition.",
+            "Finish with a light setting veil to preserve skin-like texture.",
+        ]
+
+        return {
+            "skin_tone_hex": skin_tone_hex,
+            "skin_tone": skin_tone,
+            "undertone": undertone,
+            "texture_score": texture_score,
+            "evenness_score": evenness_score,
+            "hydration_score": hydration_score,
+            "pore_refinement_score": pore_refinement_score,
+            "confidence": confidence,
+            "suggested_shades": suggested_shades,
+            "luxury_recommendations": luxury_recommendations,
+        }
+    except Exception:
+        return default_metrics
 
 @app.post("/v1/apply-foundation-mediapipe")
 async def apply_foundation_mediapipe(req: FoundationApplicationRequest):
