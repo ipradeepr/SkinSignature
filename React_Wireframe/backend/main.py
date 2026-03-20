@@ -255,8 +255,27 @@ def _render_health_html(payload: Dict[str, Any]) -> str:
                 font-size: 12px;
                 font-weight: 600;
                 background: #fff;
+                transition: background 160ms ease, transform 90ms ease, box-shadow 160ms ease, color 160ms ease;
             }}
-            .top-links a:hover {{ background: #f8f2e7; }}
+            .top-links a:hover {{ background: #f8f2e7; box-shadow: 0 2px 8px rgba(191, 167, 122, 0.22); }}
+            .top-links a:focus-visible {{ outline: 2px solid #bfa77a; outline-offset: 2px; }}
+            .top-links a:active {{ transform: translateY(1px) scale(0.98); box-shadow: none; }}
+            .top-links .is-current {{
+                border: 1px solid #6d4c1e;
+                border-radius: 8px;
+                padding: 7px 11px;
+                font-size: 12px;
+                font-weight: 600;
+                line-height: 1;
+            }}
+            .top-links .is-current {{
+                background: #6d4c1e;
+                color: #fff;
+                border-color: #6d4c1e;
+                cursor: default;
+                pointer-events: none;
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            }}
             .container {{ max-width: 980px; margin: 0 auto; padding: 28px 16px 40px; }}
             .hero {{
                 background: var(--card);
@@ -302,11 +321,15 @@ def _render_health_html(payload: Dict[str, Any]) -> str:
                 text-decoration: none;
                 border: 1px solid var(--accent);
                 border-radius: 8px;
-                padding: 8px 12px;
-                font-size: 13px;
+                padding: 7px 11px;
+                font-size: 12px;
+                font-weight: 600;
                 background: #fff;
+                transition: background 160ms ease, transform 90ms ease, box-shadow 160ms ease, color 160ms ease;
             }}
-            .footer-links a:hover {{ background: #f8f2e7; }}
+            .footer-links a:hover {{ background: #f8f2e7; box-shadow: 0 2px 8px rgba(191, 167, 122, 0.22); }}
+            .footer-links a:focus-visible {{ outline: 2px solid #bfa77a; outline-offset: 2px; }}
+            .footer-links a:active {{ transform: translateY(1px) scale(0.98); box-shadow: none; }}
         </style>
     </head>
     <body>
@@ -316,6 +339,7 @@ def _render_health_html(payload: Dict[str, Any]) -> str:
                 <div class="top-links">
                     <a href="/home">Home</a>
                     <a href="/try-on">Try-On</a>
+                    <span class="is-current" aria-current="page">Health</span>
                 </div>
             </div>
         </header>
