@@ -1750,7 +1750,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                   </div>
 
                   <div className="lux-card rounded-xl px-6 py-4 lux-smooth-panel" key={`details-${selectedShade.hex}-${finish}-${lightingMode}`}>
-                <div className="font-bold text-lg text-[#6d4c1e] mb-2">Recommended Foundation Profile</div>
+                <div className="font-bold text-lg text-[#6d4c1e] mb-2">AI Recommendation Summary</div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="font-semibold text-[#6d4c1e]">Shade:</span>
@@ -1760,12 +1760,6 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                     <span className="font-semibold text-[#6d4c1e]">Hex:</span>
                     <span className="font-bold text-[#bfa77a]">{selectedShade.hex}</span>
                   </div>
-                  {selectedShade.mix.map((mixItem) => (
-                    <div className="flex justify-between" key={mixItem.cartridgeId}>
-                      <span className="font-semibold text-[#6d4c1e]">{cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId}:</span>
-                      <span className="font-bold text-[#bfa77a]">{mixItem.percentage}%</span>
-                    </div>
-                  ))}
                 </div>
                 <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
                   <div className="font-bold text-sm text-[#6d4c1e] mb-2">Skin Analysis</div>
@@ -1948,83 +1942,91 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
             </div>
           </div>
         </div>
-        <button
-          className="main-action-btn mt-4"
-          onClick={handleFullAnalysis}
-        >
-          Complexion Dossier
-        </button>
-        {/* Show full analysis modal/section */}
-        {fullAnalysis && (
-          <div className="mt-4 p-4 bg-white border border-[#bfa77a] rounded-xl shadow">
-            {!fullAnalysisLoading && !fullAnalysis.error && (
-              <>
-                <div className="font-bold text-[#bfa77a] mb-3">Luxury Skin Analysis</div>
-                {luxuryAnalysisView && (
+        {capturedImage ? (
+          <>
+            <button
+              className="main-action-btn mt-4"
+              onClick={handleFullAnalysis}
+            >
+              Complexion Dossier
+            </button>
+            {/* Show full analysis modal/section */}
+            {fullAnalysis && (
+              <div className="mt-4 p-4 bg-white border border-[#bfa77a] rounded-xl shadow">
+                {!fullAnalysisLoading && !fullAnalysis.error && (
                   <>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div><span className="font-semibold text-[#6d4c1e]">Complexion Index:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.complexionIndex}%</span></div>
-                      <div><span className="font-semibold text-[#6d4c1e]">Luxury Tier:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.tier}</span></div>
-                      <div><span className="font-semibold text-[#6d4c1e]">Skin Tone Hex:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.toneHex}</span></div>
-                      <div><span className="font-semibold text-[#6d4c1e]">Undertone:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.undertone}</span></div>
-                      <div><span className="font-semibold text-[#6d4c1e]">Texture:</span> <span className="text-[#bfa77a]">{scoreStory(luxuryAnalysisView.textureScore).label} <span className="text-[#6d4c1e]/70">{scoreStory(luxuryAnalysisView.textureScore).subtle}</span></span></div>
-                      <div><span className="font-semibold text-[#6d4c1e]">Evenness:</span> <span className="text-[#bfa77a]">{scoreStory(luxuryAnalysisView.evennessScore).label} <span className="text-[#6d4c1e]/70">{scoreStory(luxuryAnalysisView.evennessScore).subtle}</span></span></div>
-                      <div><span className="font-semibold text-[#6d4c1e]">Hydration:</span> <span className="text-[#bfa77a]">{scoreStory(luxuryAnalysisView.hydrationScore).label} <span className="text-[#6d4c1e]/70">{scoreStory(luxuryAnalysisView.hydrationScore).subtle}</span></span></div>
-                      <div><span className="font-semibold text-[#6d4c1e]">Pore Refinement:</span> <span className="text-[#bfa77a]">{scoreStory(luxuryAnalysisView.poreScore).label} <span className="text-[#6d4c1e]/70">{scoreStory(luxuryAnalysisView.poreScore).subtle}</span></span></div>
-                    </div>
+                    <div className="font-bold text-[#bfa77a] mb-3">Luxury Skin Analysis</div>
+                    {luxuryAnalysisView && (
+                      <>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div><span className="font-semibold text-[#6d4c1e]">Complexion Index:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.complexionIndex}%</span></div>
+                          <div><span className="font-semibold text-[#6d4c1e]">Luxury Tier:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.tier}</span></div>
+                          <div><span className="font-semibold text-[#6d4c1e]">Skin Tone Hex:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.toneHex}</span></div>
+                          <div><span className="font-semibold text-[#6d4c1e]">Undertone:</span> <span className="text-[#bfa77a]">{luxuryAnalysisView.undertone}</span></div>
+                          <div><span className="font-semibold text-[#6d4c1e]">Texture:</span> <span className="text-[#bfa77a]">{scoreStory(luxuryAnalysisView.textureScore).label} <span className="text-[#6d4c1e]/70">{scoreStory(luxuryAnalysisView.textureScore).subtle}</span></span></div>
+                          <div><span className="font-semibold text-[#6d4c1e]">Evenness:</span> <span className="text-[#bfa77a]">{scoreStory(luxuryAnalysisView.evennessScore).label} <span className="text-[#6d4c1e]/70">{scoreStory(luxuryAnalysisView.evennessScore).subtle}</span></span></div>
+                          <div><span className="font-semibold text-[#6d4c1e]">Hydration:</span> <span className="text-[#bfa77a]">{scoreStory(luxuryAnalysisView.hydrationScore).label} <span className="text-[#6d4c1e]/70">{scoreStory(luxuryAnalysisView.hydrationScore).subtle}</span></span></div>
+                          <div><span className="font-semibold text-[#6d4c1e]">Pore Refinement:</span> <span className="text-[#bfa77a]">{scoreStory(luxuryAnalysisView.poreScore).label} <span className="text-[#6d4c1e]/70">{scoreStory(luxuryAnalysisView.poreScore).subtle}</span></span></div>
+                        </div>
 
-                    <div className="mt-4 p-3 rounded-lg border border-[#d9c6a4] bg-[#fdf6f0]">
-                      <div className="font-semibold text-[#6d4c1e] mb-1">Recommended Formula</div>
-                      <div className="text-sm text-[#6d4c1e]">
-                        {selectedShade.name} · {finish} finish · Confidence {luxuryAnalysisView.confidenceValue}%
-                      </div>
-                      <div className="text-xs text-[#6d4c1e]/80 mt-1">
-                        {selectedShade.mix.map((mixItem) => `${cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId} ${mixItem.percentage}%`).join(' + ')}
-                      </div>
-                    </div>
+                        <div className="mt-4 p-3 rounded-lg border border-[#d9c6a4] bg-[#fdf6f0]">
+                          <div className="font-semibold text-[#6d4c1e] mb-1">Recommended Formula</div>
+                          <div className="text-sm text-[#6d4c1e]">
+                            {selectedShade.name} · {finish} finish · Confidence {luxuryAnalysisView.confidenceValue}%
+                          </div>
+                          <div className="text-xs text-[#6d4c1e]/80 mt-1">
+                            {selectedShade.mix.map((mixItem) => `${cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId} ${mixItem.percentage}%`).join(' + ')}
+                          </div>
+                        </div>
 
-                    <div className="mt-4">
-                      <div className="font-semibold text-[#6d4c1e] mb-1">Luxury Finish Direction</div>
-                      <p className="text-sm text-[#6d4c1e]/90">{luxuryAnalysisView.finishingRecommendation}</p>
-                      <p className="text-sm text-[#6d4c1e]/90 mt-1">{luxuryAnalysisView.refinementPriority}</p>
-                    </div>
+                        <div className="mt-4">
+                          <div className="font-semibold text-[#6d4c1e] mb-1">Luxury Finish Direction</div>
+                          <p className="text-sm text-[#6d4c1e]/90">{luxuryAnalysisView.finishingRecommendation}</p>
+                          <p className="text-sm text-[#6d4c1e]/90 mt-1">{luxuryAnalysisView.refinementPriority}</p>
+                        </div>
 
-                    <div className="mt-4">
-                      <div className="font-semibold text-[#6d4c1e] mb-1">Suggested Shades</div>
-                      <div className="flex flex-wrap gap-2">
-                        {(luxuryAnalysisView.suggestedShades || []).map((s: string) => (
-                          <span key={s} className="px-3 py-1 rounded-full bg-[#f7e9f2] text-[#bfa77a] border border-[#bfa77a] text-xs font-semibold">{s}</span>
-                        ))}
-                      </div>
-                    </div>
+                        <div className="mt-4">
+                          <div className="font-semibold text-[#6d4c1e] mb-1">Suggested Shades</div>
+                          <div className="flex flex-wrap gap-2">
+                            {(luxuryAnalysisView.suggestedShades || []).map((s: string) => (
+                              <span key={s} className="px-3 py-1 rounded-full bg-[#f7e9f2] text-[#bfa77a] border border-[#bfa77a] text-xs font-semibold">{s}</span>
+                            ))}
+                          </div>
+                        </div>
 
-                    <div className="mt-4">
-                      <div className="font-semibold text-[#6d4c1e] mb-1">Concierge Notes</div>
-                      <ul className="list-disc ml-5 text-[#bfa77a] text-sm space-y-1">
-                        {(luxuryAnalysisView.conciergeTips.length > 0
-                          ? luxuryAnalysisView.conciergeTips
-                          : [
-                              'Blend from center face outward for couture-level diffusion.',
-                              'Set only high-movement zones to retain a natural luxury finish.',
-                              'Layer in thin passes for camera-safe depth without heaviness.',
-                            ]).map((tip: string) => (
-                          <li key={tip}>{tip}</li>
-                        ))}
-                      </ul>
-                    </div>
+                        <div className="mt-4">
+                          <div className="font-semibold text-[#6d4c1e] mb-1">Concierge Notes</div>
+                          <ul className="list-disc ml-5 text-[#bfa77a] text-sm space-y-1">
+                            {(luxuryAnalysisView.conciergeTips.length > 0
+                              ? luxuryAnalysisView.conciergeTips
+                              : [
+                                  'Blend from center face outward for couture-level diffusion.',
+                                  'Set only high-movement zones to retain a natural luxury finish.',
+                                  'Layer in thin passes for camera-safe depth without heaviness.',
+                                ]).map((tip: string) => (
+                              <li key={tip}>{tip}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
-              </>
-            )}
-            {fullAnalysisLoading && (
-              <div className="flex items-center gap-2 text-[#bfa77a]">
-                <div className="w-5 h-5 border-2 border-[#bfa77a] border-t-transparent rounded-full animate-spin"></div>
-                Preparing complexion dossier...
+                {fullAnalysisLoading && (
+                  <div className="flex items-center gap-2 text-[#bfa77a]">
+                    <div className="w-5 h-5 border-2 border-[#bfa77a] border-t-transparent rounded-full animate-spin"></div>
+                    Preparing complexion dossier...
+                  </div>
+                )}
+                {fullAnalysis.error && (
+                  <div className="text-red-600 text-sm font-semibold">Error: {fullAnalysis.error}</div>
+                )}
               </div>
             )}
-            {fullAnalysis.error && (
-              <div className="text-red-600 text-sm font-semibold">Error: {fullAnalysis.error}</div>
-            )}
+          </>
+        ) : (
+          <div className="mt-3 px-3 py-2 rounded-lg border border-[#e4d5bc] bg-white/80 text-xs text-[#6d4c1e]/85 text-center">
+            Capture a photo to unlock the Complexion Dossier.
           </div>
         )}
       </div>

@@ -82,7 +82,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
             {!hasConfigBeenChanged && selectedConfig === 'foundation' && (
               <span className="config-default-badge">Default</span>
             )}
-            {selectedConfig === 'foundation' ? '✓ Foundation Selected' : 'Foundation'}
+            {selectedConfig === 'foundation' ? '✓ Foundation' : 'Foundation'}
           </button>
           <button
             className={`main-action-btn config-option-btn flex-1 w-full${selectedConfig === 'lipstick' ? ' active' : ''}`}
@@ -93,7 +93,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
             {!hasConfigBeenChanged && selectedConfig === 'lipstick' && (
               <span className="config-default-badge">Default</span>
             )}
-            {selectedConfig === 'lipstick' ? '✓ Lipstick Selected' : 'Lipstick'}
+            {selectedConfig === 'lipstick' ? '✓ Lipstick' : 'Lipstick'}
           </button>
         </div>
       </div>

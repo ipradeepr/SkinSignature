@@ -1421,23 +1421,6 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
           {!capturedImage && (
             <div className="mt-4 w-full max-w-md mx-auto">
-              {/* Opacity Control - moved up for quicker access */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2 text-sm md:text-base">
-                  <span className="font-semibold text-[#6d4c1e]">Lipstick Intensity</span>
-                  <span className="font-semibold text-[#6d4c1e]">{lipstickOpacity}%</span>
-                </div>
-                <input
-                  type="range"
-                  min={10}
-                  max={100}
-                  step={1}
-                  value={lipstickOpacity}
-                  onChange={(e) => setLipstickOpacity(parseInt(e.target.value))}
-                  className="w-full accent-[#bfa77a] transition-all duration-150"
-                />
-              </div>
-
               {experienceType === 'in-house' && (
                 <div className="lux-card rounded-xl p-3 mb-3">
                   <div className="text-xs font-semibold text-[#6d4c1e] mb-2">In-home lipstick cartridge sets</div>
@@ -1501,6 +1484,15 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   ? 'Selection source: this section shows the active 3-cartridge blend mapped to your selected lipstick shade.'
                   : 'Formula source: this section shows the physical 3-cartridge recipe for the selected lipstick shade.'}
               </div>
+
+            </div>
+          )}
+
+          {!capturedImage && (
+            <div className="mt-3 w-full max-w-md mx-auto">
+              <div className="px-3 py-2 rounded-lg border border-[#e4d5bc] bg-white/80 text-xs text-[#6d4c1e]/85 text-center">
+                Capture a photo to unlock your Lip Formula and Checkout Assistant.
+              </div>
             </div>
           )}
 
@@ -1529,7 +1521,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             <div className="mt-4 w-full max-w-md mx-auto">
               <div className="lux-card rounded-xl px-6 py-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-[#6d4c1e]">Adjust Intensity</span>
+                  <span className="font-semibold text-[#6d4c1e]">Lipstick Intensity</span>
                   <span className="font-semibold text-[#6d4c1e]">{lipstickOpacity}%</span>
                 </div>
                 <input 
@@ -1612,20 +1604,10 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
         <div className="flex-1 flex flex-col items-center">
           <div className="w-full max-w-md mx-auto">
             <h3 className="lux-title text-2xl mb-6 text-center tracking-[0.2em] uppercase">
-              {experienceType === 'store'
-                ? isCartridgeSelectionMode
-                  ? 'Cartridge Shade Preview'
-                  : 'Virtual Shade Preview (Try)'
-                : `${activeInhouseSet.label} shade gradients`}
+              AI Shade Recommendations
             </h3>
             <div className="text-xs text-[#6d4c1e] mb-3 text-center">
-              {experienceType === 'store'
-                ? isCartridgeSelectionMode
-                  ? `Selection palette: tone-adapted for ${effectiveSkinTone} skin tone. Pick a shade to keep this cartridge blend active.`
-                  : `Try-on palette: digital shade selection preview. The cartridge wall above shows purchase formula.`
-                : isCartridgeSelectionMode
-                  ? `These previews are generated from your selected cartridges with light-to-deep blend progression.`
-                  : `These shades are generated from your 3 cartridges with different light-to-dark mix ratios.`}
+              AI-curated from your captured portrait, skin tone, and selected occasion.
             </div>
             
             {/* Occasion & Finish Controls */}
@@ -1687,6 +1669,9 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
             {showProposedShadesSection && (
               <>
+                <div className="lux-card rounded-xl px-4 py-3 mb-4 text-xs text-[#6d4c1e]/80">
+                  <span className="font-semibold text-[#6d4c1e]">AI detected:</span> {effectiveSkinTone} skin tone · {selectedOccasion} occasion · {finish} finish. Shades ranked by undertone harmony and luma proximity.
+                </div>
                 {/* Color Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
                   {proposedLipstickShades.map((lipstick) => (
@@ -1729,119 +1714,8 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
             {showProposedShadesSection && (
               <>
-                <div className="mb-6">
-                  <div className="lux-card rounded-xl px-6 py-4">
-                <div className="font-bold text-base text-[#6d4c1e] mb-2">Checkout Assistant</div>
-                <button
-                  type="button"
-                  onClick={handleAddAllCartridgesToCart}
-                  className="main-action-btn w-full mb-2"
-                  disabled={cartLoadingAll}
-                >
-                  {cartLoadingAll ? 'Adding Cartridges...' : 'Add All Cartridges to Cart'}
-                </button>
-                {cartMessage && (
-                  <div className="mb-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
-                    {cartMessage}
-                  </div>
-                )}
-                {hasAddedCartridges && (
-                  <button
-                    type="button"
-                    onClick={handleResetAddedCartridges}
-                    className="mb-2 text-xs font-semibold text-[#6d4c1e] underline underline-offset-2 hover:text-[#bfa77a] lux-cta-transition"
-                  >
-                    Reset added items
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={handleReserveFormula}
-                  className="main-action-btn w-full"
-                  disabled={reservationLoading}
-                >
-                  {reservationLoading
-                    ? experienceType === 'in-house'
-                      ? 'Dispensing Selected Shade...'
-                      : 'Reserving Formula...'
-                    : experienceType === 'in-house'
-                      ? 'Dispense Selected Shade'
-                      : 'Reserve this Formula'}
-                </button>
-                {reservationMessage && (
-                  <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
-                    {reservationReference && (
-                      <div className="font-semibold text-[#bfa77a] mb-1">Ref: {reservationReference}</div>
-                    )}
-                    {reservationMessage}
-                  </div>
-                )}
 
-                {experienceType !== 'in-house' && (
-                  <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
-                    <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Buy This Device</div>
-                    <div className="rounded-xl border border-[#d9c6a4] bg-white/90 p-3">
-                      <img
-                        src={skinSignatureDeviceImage}
-                        alt="Skin Signature Device"
-                        className="w-full h-28 object-contain rounded-lg bg-[#fdf6f0] border border-[#eadcc6]"
-                      />
-                      <p className="mt-2 text-xs text-[#6d4c1e]">
-                        Bring the couture complexion studio home—custom shade precision, every day.
-                      </p>
-                      {isDeviceAlreadyInCart && (
-                        <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
-                          This device is already in your cart.
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleAddDeviceToCart}
-                        className="main-action-btn w-full mt-3"
-                        disabled={deviceCartLoading}
-                      >
-                        {deviceCartLoading
-                          ? 'Adding Device...'
-                          : isDeviceAlreadyInCart
-                            ? 'Add Device to Cart Again'
-                            : 'Add Device to Cart'}
-                      </button>
-                      {deviceCartMessage && (
-                        <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
-                          {deviceCartMessage}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
-                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Cartridge Refill Plan</div>
-                  <div className="space-y-1 text-xs text-[#6d4c1e]">
-                    {replenishmentPlan.map((item) => (
-                      <div key={item.cartridgeId} className="flex items-center justify-between gap-2">
-                        <span className="truncate">{item.cartridgeName} · {item.priority}</span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-semibold text-[#bfa77a]">{item.etaDays} days</span>
-                          <button
-                            type="button"
-                            onClick={() => addCartridgeToCart(item.cartridgeId, item.percentage)}
-                            className="text-[10px] px-2 py-1 rounded-md border border-[#bfa77a] text-[#6d4c1e] bg-white/90 hover:bg-[#f7f2ea] lux-cta-transition"
-                            disabled={!!cartLoadingById[item.cartridgeId] || cartLoadingAll || !!addedCartridgeIds[item.cartridgeId]}
-                          >
-                            {cartLoadingById[item.cartridgeId]
-                              ? 'Adding...'
-                              : addedCartridgeIds[item.cartridgeId]
-                                ? 'Added'
-                                : 'Add to Cart'}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
+                <div className="lux-card rounded-xl px-6 py-4 mt-2">
                   <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Wear Guidance</div>
                   <div className="space-y-1 text-xs text-[#6d4c1e]">
                     <div className="flex justify-between">
@@ -1852,9 +1726,118 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                     <div>{expectedWearProfile.bestSetting}</div>
                   </div>
                 </div>
-              </div>
+
+                {/* Checkout Assistant */}
+                <div className="lux-card rounded-xl px-6 py-4 mt-4">
+                  <div className="font-bold text-base text-[#6d4c1e] mb-2">Checkout Assistant</div>
+                  <button
+                    type="button"
+                    onClick={handleAddAllCartridgesToCart}
+                    className="main-action-btn w-full mb-2"
+                    disabled={cartLoadingAll}
+                  >
+                    {cartLoadingAll ? 'Adding Cartridges...' : 'Add All Cartridges to Cart'}
+                  </button>
+                  {cartMessage && (
+                    <div className="mb-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                      {cartMessage}
+                    </div>
+                  )}
+                  {hasAddedCartridges && (
+                    <button
+                      type="button"
+                      onClick={handleResetAddedCartridges}
+                      className="mb-2 text-xs font-semibold text-[#6d4c1e] underline underline-offset-2 hover:text-[#bfa77a] lux-cta-transition"
+                    >
+                      Reset added items
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleReserveFormula}
+                    className="main-action-btn w-full"
+                    disabled={reservationLoading}
+                  >
+                    {reservationLoading
+                      ? experienceType === 'in-house'
+                        ? 'Dispensing Selected Shade...'
+                        : 'Reserving Formula...'
+                      : experienceType === 'in-house'
+                        ? 'Dispense Selected Shade'
+                        : 'Reserve this Formula'}
+                  </button>
+                  {reservationMessage && (
+                    <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                      {reservationReference && (
+                        <div className="font-semibold text-[#bfa77a] mb-1">Ref: {reservationReference}</div>
+                      )}
+                      {reservationMessage}
+                    </div>
+                  )}
+                  {experienceType !== 'in-house' && (
+                    <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
+                      <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Buy This Device</div>
+                      <div className="rounded-xl border border-[#d9c6a4] bg-white/90 p-3">
+                        <img
+                          src={skinSignatureDeviceImage}
+                          alt="Skin Signature Device"
+                          className="w-full h-28 object-contain rounded-lg bg-[#fdf6f0] border border-[#eadcc6]"
+                        />
+                        <p className="mt-2 text-xs text-[#6d4c1e]">
+                          Bring the couture complexion studio home—custom shade precision, every day.
+                        </p>
+                        {isDeviceAlreadyInCart && (
+                          <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                            This device is already in your cart.
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleAddDeviceToCart}
+                          className="main-action-btn w-full mt-3"
+                          disabled={deviceCartLoading}
+                        >
+                          {deviceCartLoading
+                            ? 'Adding Device...'
+                            : isDeviceAlreadyInCart
+                              ? 'Add Device to Cart Again'
+                              : 'Add Device to Cart'}
+                        </button>
+                        {deviceCartMessage && (
+                          <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                            {deviceCartMessage}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
+                    <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Cartridge Refill Plan</div>
+                    <div className="space-y-1 text-xs text-[#6d4c1e]">
+                      {replenishmentPlan.map((item) => (
+                        <div key={item.cartridgeId} className="flex items-center justify-between gap-2">
+                          <span className="truncate">{item.cartridgeName} · {item.priority}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-semibold text-[#bfa77a]">{item.etaDays} days</span>
+                            <button
+                              type="button"
+                              onClick={() => addCartridgeToCart(item.cartridgeId, item.percentage)}
+                              className="text-[10px] px-2 py-1 rounded-md border border-[#bfa77a] text-[#6d4c1e] bg-white/90 hover:bg-[#f7f2ea] lux-cta-transition"
+                              disabled={!!cartLoadingById[item.cartridgeId] || cartLoadingAll || !!addedCartridgeIds[item.cartridgeId]}
+                            >
+                              {cartLoadingById[item.cartridgeId]
+                                ? 'Adding...'
+                                : addedCartridgeIds[item.cartridgeId]
+                                  ? 'Added'
+                                  : 'Add to Cart'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-            
+
                 {/* Luxury Brand Suggestions */}
                 <div className="lux-card rounded-2xl p-6">
                   <div className="font-semibold lux-title text-lg mb-4">
