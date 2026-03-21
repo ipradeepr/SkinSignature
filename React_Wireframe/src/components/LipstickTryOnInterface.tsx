@@ -1504,7 +1504,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
           ✕
         </button>
 
-        <div className="w-full pr-14 sm:pr-0">
+        <div className="w-full pr-14 sm:pr-0 lg:absolute lg:top-6 lg:left-6 lg:z-10 lg:w-auto lg:pr-0">
           <div className="flex flex-col gap-1 sm:gap-2">
             <div className="inline-flex w-auto items-center gap-2 self-start rounded-full border border-[#bfa77a] bg-white/90 px-3 py-1 text-xs">
               <span className="font-semibold text-[#6d4c1e]">Live tone:</span>
