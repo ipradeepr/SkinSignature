@@ -11,11 +11,11 @@ const FoundationSwatchPanel: React.FC<FoundationSwatchPanelProps> = ({ foundatio
   <div className="mt-4">
     {/* Move label inside the modal/overlay, not outside */}
     <h4 className="font-semibold mb-3 text-center lux-title text-lg tracking-[0.2em] uppercase">Recommended Foundations</h4>
-    <div className="flex gap-2 justify-center">
+    <div className="w-full flex flex-wrap gap-2 justify-center">
       {foundationSwatches.map((swatch) => (
         <button
           key={swatch.name}
-          className={`relative px-4 py-2 rounded-xl border text-xs sm:text-sm font-semibold transform transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${selectedFoundation?.name === swatch.name ? 'border-[#bfa77a] bg-[#1c1a17] text-[#f7f2ea] -translate-y-0.5 shadow-[0_10px_18px_rgba(28,26,23,0.18)]' : 'border-[#d9c6a4] bg-white/90 text-[#5b4632] hover:-translate-y-0.5'} ${isApplying ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`relative w-[108px] sm:w-[116px] px-3 py-2 rounded-xl border text-xs sm:text-sm font-semibold transform transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${selectedFoundation?.name === swatch.name ? 'border-[#bfa77a] bg-[#1c1a17] text-[#f7f2ea] -translate-y-0.5 shadow-[0_10px_18px_rgba(28,26,23,0.18)]' : 'border-[#d9c6a4] bg-white/90 text-[#5b4632] hover:-translate-y-0.5'} ${isApplying ? 'opacity-60 cursor-not-allowed' : ''}`}
           onClick={() => onSelect(swatch)}
           disabled={isApplying}
         >

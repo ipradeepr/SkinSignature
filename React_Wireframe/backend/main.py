@@ -55,6 +55,8 @@ frontend_url = os.getenv("FRONTEND_URL", "").strip()
 if frontend_url:
     extra_allowed_origins.append(frontend_url)
 
+FRONTEND_NAV_URL = frontend_url.rstrip("/") if frontend_url else ""
+
 ALLOWED_ORIGINS = list(dict.fromkeys(DEFAULT_ALLOWED_ORIGINS + extra_allowed_origins))
 
 app.add_middleware(
@@ -96,6 +98,21 @@ class ReserveFormulaRequest(BaseModel):
     cartridges: List[ReserveFormulaMixItem] = []
     expected_wear_profile: Optional[Dict[str, Any]] = None
 
+class CartAddRequest(BaseModel):
+    product_id: str
+    product_name: str
+    category: str
+    product_type: str
+    shade_name: Optional[str] = None
+    shade_hex: Optional[str] = None
+    cartridge_id: Optional[str] = None
+    cartridge_percentage: Optional[float] = None
+    finish: Optional[str] = None
+    experience_type: Optional[str] = None
+    launch_mode: Optional[str] = None
+    quantity: int = 1
+    price: float = 0
+
 def _collect_health_payload() -> Dict[str, Any]:
     # Attempt lazy load for reporting if not initialized yet
     if 'mp_face_mesh' not in globals() or mp_face_mesh is None:
@@ -129,6 +146,8 @@ def _collect_health_payload() -> Dict[str, Any]:
 def _render_health_html(payload: Dict[str, Any]) -> str:
         diagnostics = payload.get("diagnostics", {})
         versions = diagnostics.get("versions", {}) if isinstance(diagnostics.get("versions", {}), dict) else {}
+    home_href = f"{FRONTEND_NAV_URL}/home" if FRONTEND_NAV_URL else "/"
+    try_on_href = f"{FRONTEND_NAV_URL}/try-on" if FRONTEND_NAV_URL else "/try-on"
 
         def _ok_badge(ok: bool) -> str:
                 color = "#137333" if ok else "#c62828"
@@ -335,10 +354,10 @@ def _render_health_html(payload: Dict[str, Any]) -> str:
     <body>
         <header class="topbar">
             <div class="topbar-inner">
-                <a class="brand" href="/home">SKIN SIGNATURE</a>
+                <a class="brand" href="{home_href}">SKIN SIGNATURE</a>
                 <div class="top-links">
-                    <a href="/home">Home</a>
-                    <a href="/try-on">Try-On</a>
+                    <a href="{home_href}">Home</a>
+                    <a href="{try_on_href}">Try-On</a>
                     <span class="is-current" aria-current="page">Health</span>
                 </div>
             </div>
@@ -703,8 +722,8 @@ def add_gloss_effect(img, lip_mask, outer_contour):
     shine_3c = cv2.cvtColor(shine_mask, cv2.COLOR_GRAY2BGR).astype(np.float32) / 255.0
 
     white = np.ones_like(result, dtype=np.float32) * 255
-    # Slightly stronger gloss (~+10%)
-    gloss_strength = 0.31
+    # Stronger gloss for clearer matte/glossy distinction
+    gloss_strength = 0.45
     result = result * (1 - shine_3c * gloss_strength) + white * shine_3c * gloss_strength
     result = np.clip(result, 0, 255).astype(np.uint8)
     return result
@@ -765,9 +784,8 @@ def apply_lipstick_to_lips(img,
     if fin == "glossy":
         result = add_gloss_effect(result, lip_mask, outer_contour)
 
-    # Step 4: Enhance lip edges (softer for matte)
-    # Nudge strengths (~+10%) for clearer distinction
-    edge_alpha = 0.275 if fin == "matte" else 0.44
+    # Step 4: Enhance lip edges (noticeably softer for matte, bolder for glossy)
+    edge_alpha = 0.22 if fin == "matte" else 0.52
     result = enhance_lip_edges(result, lip_mask, color, edge_alpha=edge_alpha)
     
     return result
@@ -1578,4 +1596,35 @@ async def reserve_formula(req: ReserveFormulaRequest):
         raise
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+
+@app.post("/api/cart/add")
+async def cart_add(req: CartAddRequest):
+    """
+    Adds a product (cartridge or formula) to the cart.
+    This is a simple stub implementation that logs the request and returns success.
+    For production, integrate with your actual e-commerce or cart system.
+    """
+    try:
+        # Log the cart addition request
+        print(f"[CART] Adding {req.product_name} (ID: {req.product_id}) to cart")
+        print(f"       Quantity: {req.quantity}, Price: ${req.price}")
+        if req.shade_name:
+            print(f"       Shade: {req.shade_name} ({req.shade_hex})")
+        if req.cartridge_id:
+            print(f"       Cartridge: {req.cartridge_id} at {req.cartridge_percentage}%")
+        
+        # Return success response
+        return {
+            "success": True,
+            "message": f"{req.product_name} added to cart",
+            "product_id": req.product_id,
+            "quantity": req.quantity,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error adding to cart: {str(e)}",
+        }
 

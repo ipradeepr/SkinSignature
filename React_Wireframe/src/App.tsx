@@ -129,7 +129,7 @@ function App() {
             </div>
           </button>
 
-          {/* Luxury Standards */}
+          {/* Refill Cartridges */}
           <button
             type="button"
             onClick={() => {
@@ -150,14 +150,14 @@ function App() {
                 <span className="text-2xl">🧴</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-semibold mb-3 lux-title">
-                Luxury Standards
+                Refill Cartridges
               </h2>
               <p className="text-sm leading-relaxed lux-muted max-w-md">
                 Already have the device? Explore different cartridges, buy the ones you need, and blend unique shades tailored to your style and skin profile.
               </p>
               <div className="mt-5 sm:mt-6">
                 <span className="main-action-btn cta-luxury">
-                  Enter Luxury
+                  Explore Refill Cartridges
                 </span>
               </div>
             </div>

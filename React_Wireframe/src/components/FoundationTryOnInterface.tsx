@@ -38,24 +38,24 @@ const storeCartridges: Cartridge[] = [
 ];
 
 const storeShadeRecipes: Array<{ name: string; mix: ShadeMix[] }> = [
-  { name: 'LV Atelier Porcelain 2.5', mix: [{ cartridgeId: 'F2', percentage: 55 }, { cartridgeId: 'F3', percentage: 30 }, { cartridgeId: 'F1', percentage: 15 }] },
-  { name: 'LV Atelier Beige 3.2', mix: [{ cartridgeId: 'F3', percentage: 50 }, { cartridgeId: 'F4', percentage: 30 }, { cartridgeId: 'F2', percentage: 20 }] },
-  { name: 'LV Atelier Warm 3.8', mix: [{ cartridgeId: 'F4', percentage: 46 }, { cartridgeId: 'F5', percentage: 34 }, { cartridgeId: 'F3', percentage: 20 }] },
-  { name: 'LV Signature Neutral 2N', mix: [{ cartridgeId: 'F2', percentage: 60 }, { cartridgeId: 'F3', percentage: 25 }, { cartridgeId: 'F1', percentage: 15 }] },
-  { name: 'LV Signature Neutral 3N', mix: [{ cartridgeId: 'F3', percentage: 52 }, { cartridgeId: 'F4', percentage: 28 }, { cartridgeId: 'F2', percentage: 20 }] },
-  { name: 'LV Signature Neutral 4N', mix: [{ cartridgeId: 'F4', percentage: 48 }, { cartridgeId: 'F5', percentage: 32 }, { cartridgeId: 'F3', percentage: 20 }] },
-  { name: 'LV Velvet Desert 2W', mix: [{ cartridgeId: 'F3', percentage: 56 }, { cartridgeId: 'F4', percentage: 24 }, { cartridgeId: 'F2', percentage: 20 }] },
-  { name: 'LV Velvet Tawny 3W', mix: [{ cartridgeId: 'F5', percentage: 44 }, { cartridgeId: 'F4', percentage: 34 }, { cartridgeId: 'F6', percentage: 22 }] },
-  { name: 'LV Velvet Toasty 4W', mix: [{ cartridgeId: 'F6', percentage: 42 }, { cartridgeId: 'F5', percentage: 31 }, { cartridgeId: 'F7', percentage: 27 }] },
-  { name: 'LV Radiance Honey 4.2', mix: [{ cartridgeId: 'F4', percentage: 50 }, { cartridgeId: 'F5', percentage: 28 }, { cartridgeId: 'F3', percentage: 22 }] },
-  { name: 'LV Radiance Amber 5.2', mix: [{ cartridgeId: 'F6', percentage: 45 }, { cartridgeId: 'F7', percentage: 30 }, { cartridgeId: 'F5', percentage: 25 }] },
-  { name: 'LV Radiance Deep 6.3', mix: [{ cartridgeId: 'F7', percentage: 48 }, { cartridgeId: 'F8', percentage: 30 }, { cartridgeId: 'F6', percentage: 22 }] },
+  { name: 'Atelier Porcelain 2.5', mix: [{ cartridgeId: 'F2', percentage: 55 }, { cartridgeId: 'F3', percentage: 30 }, { cartridgeId: 'F1', percentage: 15 }] },
+  { name: 'Atelier Beige 3.2', mix: [{ cartridgeId: 'F3', percentage: 50 }, { cartridgeId: 'F4', percentage: 30 }, { cartridgeId: 'F2', percentage: 20 }] },
+  { name: 'Atelier Warm 3.8', mix: [{ cartridgeId: 'F4', percentage: 46 }, { cartridgeId: 'F5', percentage: 34 }, { cartridgeId: 'F3', percentage: 20 }] },
+  { name: 'Signature Neutral 2N', mix: [{ cartridgeId: 'F2', percentage: 60 }, { cartridgeId: 'F3', percentage: 25 }, { cartridgeId: 'F1', percentage: 15 }] },
+  { name: 'Signature Neutral 3N', mix: [{ cartridgeId: 'F3', percentage: 52 }, { cartridgeId: 'F4', percentage: 28 }, { cartridgeId: 'F2', percentage: 20 }] },
+  { name: 'Signature Neutral 4N', mix: [{ cartridgeId: 'F4', percentage: 48 }, { cartridgeId: 'F5', percentage: 32 }, { cartridgeId: 'F3', percentage: 20 }] },
+  { name: 'Velvet Desert 2W', mix: [{ cartridgeId: 'F3', percentage: 56 }, { cartridgeId: 'F4', percentage: 24 }, { cartridgeId: 'F2', percentage: 20 }] },
+  { name: 'Velvet Tawny 3W', mix: [{ cartridgeId: 'F5', percentage: 44 }, { cartridgeId: 'F4', percentage: 34 }, { cartridgeId: 'F6', percentage: 22 }] },
+  { name: 'Velvet Toasty 4W', mix: [{ cartridgeId: 'F6', percentage: 42 }, { cartridgeId: 'F5', percentage: 31 }, { cartridgeId: 'F7', percentage: 27 }] },
+  { name: 'Radiance Honey 4.2', mix: [{ cartridgeId: 'F4', percentage: 50 }, { cartridgeId: 'F5', percentage: 28 }, { cartridgeId: 'F3', percentage: 22 }] },
+  { name: 'Radiance Amber 5.2', mix: [{ cartridgeId: 'F6', percentage: 45 }, { cartridgeId: 'F7', percentage: 30 }, { cartridgeId: 'F5', percentage: 25 }] },
+  { name: 'Radiance Deep 6.3', mix: [{ cartridgeId: 'F7', percentage: 48 }, { cartridgeId: 'F8', percentage: 30 }, { cartridgeId: 'F6', percentage: 22 }] },
 ];
 
 const inhouseCartridgeSets: CartridgeSet[] = [
   {
     id: 'set-a',
-    label: 'Set A (Warm Nude)',
+    label: 'Warm Nude Blend',
     cartridges: [
       { id: 'A1', name: 'Warm Sand', hex: '#D6B28E' },
       { id: 'A2', name: 'Golden Beige', hex: '#B88B67' },
@@ -64,7 +64,7 @@ const inhouseCartridgeSets: CartridgeSet[] = [
   },
   {
     id: 'set-b',
-    label: 'Set B (Neutral Tan)',
+    label: 'Neutral Tan Blend',
     cartridges: [
       { id: 'B1', name: 'Neutral Linen', hex: '#D9BF9F' },
       { id: 'B2', name: 'Soft Tan', hex: '#A97B59' },
@@ -98,6 +98,19 @@ function rgbToHex(r: number, g: number, b: number): string {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+function normalizeShadeName(name: string): string {
+  return String(name || '')
+    .replace(/^\s*(LV|DIOR|MAC|NARS|YSL|CHANEL|GUCCI|FENTY|ARMANI|ESTEE\s+LAUDER)[\s-]+/i, '')
+    .trim();
+}
+
+function sanitizeFoundationShadeNames(shades: FoundationShade[]): FoundationShade[] {
+  return shades.map((shade) => ({
+    ...shade,
+    name: normalizeShadeName(shade.name),
+  }));
+}
+
 function mixShadeHex(cartridges: Cartridge[], mix: ShadeMix[]): string {
   const cartridgeMap = new Map(cartridges.map((cartridge) => [cartridge.id, cartridge]));
   let r = 0;
@@ -118,7 +131,7 @@ function buildStoreShades(recipes: Array<{ name: string; mix: ShadeMix[] }>): Fo
   return recipes.map((recipe) => {
     const hex = mixShadeHex(storeCartridges, recipe.mix);
     return {
-      name: recipe.name,
+      name: normalizeShadeName(recipe.name),
       hex,
       color: hex,
       mix: recipe.mix,
@@ -168,10 +181,99 @@ const occasionOptions = [
   { value: 'casual', label: 'Casual' },
   { value: 'party', label: 'Party' },
   { value: 'office', label: 'Office' },
-  { value: 'wedding', label: 'Wedding' },
-  { value: 'festival', label: 'Festival' },
-  { value: 'editorial', label: 'Editorial' },
 ];
+
+type RegionKey = 'global' | 'americas' | 'emea' | 'apac';
+
+const regionDisplayLabel: Record<RegionKey, string> = {
+  global: 'Global',
+  americas: 'Americas',
+  emea: 'EMEA',
+  apac: 'APAC',
+};
+
+function detectRegionFromLocale(): RegionKey {
+  if (typeof navigator === 'undefined') return 'global';
+
+  const locales = Array.from(
+    new Set([
+      navigator.language,
+      ...(Array.isArray(navigator.languages) ? navigator.languages : []),
+    ].filter(Boolean).map((value) => String(value).toLowerCase())),
+  );
+
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone?.toLowerCase() || '';
+  if (timezone.startsWith('asia/') || timezone.startsWith('australia/')) return 'apac';
+  if (timezone.startsWith('america/')) return 'americas';
+  if (timezone.startsWith('europe/') || timezone.startsWith('africa/')) return 'emea';
+
+  const getCountryCode = (locale: string): string => {
+    const parts = locale.split(/[-_]/).map((part) => part.toLowerCase());
+    for (let index = parts.length - 1; index >= 0; index -= 1) {
+      if (parts[index].length === 2) return parts[index];
+    }
+    return '';
+  };
+
+  const countries = new Set(locales.map(getCountryCode).filter(Boolean));
+  const hasCountry = (codes: string[]) => codes.some((code) => countries.has(code));
+
+  if (hasCountry(['in', 'cn', 'jp', 'kr', 'th', 'vi', 'sg', 'hk', 'my', 'id', 'ph', 'au', 'nz', 'tw'])) return 'apac';
+  if (hasCountry(['us', 'ca', 'mx', 'br', 'ar', 'cl', 'co', 'pe'])) return 'americas';
+  if (hasCountry(['gb', 'fr', 'de', 'it', 'es', 'pt', 'nl', 'be', 'ch', 'se', 'no', 'dk', 'fi', 'ie', 'ae', 'sa', 'qa', 'kw', 'om', 'za', 'eg', 'tr'])) return 'emea';
+
+  if (locales.some((locale) => locale.startsWith('zh-') || locale.startsWith('ja-') || locale.startsWith('ko-') || locale.startsWith('th-') || locale.startsWith('vi-') || locale.startsWith('hi-') || locale.startsWith('bn-') || locale.startsWith('ta-') || locale.startsWith('te-') || locale.startsWith('ml-') || locale.startsWith('mr-') || locale.startsWith('gu-') || locale.startsWith('kn-') || locale.startsWith('en-in'))) return 'apac';
+  if (locales.some((locale) => locale.startsWith('en-us') || locale.startsWith('en-ca') || locale.startsWith('es-mx') || locale.startsWith('pt-br'))) return 'americas';
+  if (locales.some((locale) => locale.startsWith('en-gb') || locale.startsWith('fr-') || locale.startsWith('de-') || locale.startsWith('it-') || locale.startsWith('es-') || locale.startsWith('ar-'))) return 'emea';
+
+  return 'global';
+}
+
+const commonLuxuryFoundationByOccasion: Record<RegionKey, Record<string, string[]>> = {
+  global: {
+    casual: ['Atelier Beige 3.2', 'Signature Neutral 3N', 'Velvet Desert 2W', 'Radiance Honey 4.2'],
+    party: ['Atelier Warm 3.8', 'Velvet Tawny 3W', 'Radiance Amber 5.2', 'Radiance Deep 6.3'],
+    office: ['Atelier Porcelain 2.5', 'Signature Neutral 2N', 'Signature Neutral 3N', 'Atelier Beige 3.2'],
+  },
+  americas: {
+    casual: ['Atelier Beige 3.2', 'Signature Neutral 3N', 'Radiance Honey 4.2', 'Velvet Desert 2W'],
+    party: ['Velvet Tawny 3W', 'Atelier Warm 3.8', 'Radiance Amber 5.2', 'Radiance Deep 6.3'],
+    office: ['Signature Neutral 2N', 'Atelier Porcelain 2.5', 'Atelier Beige 3.2', 'Signature Neutral 3N'],
+  },
+  emea: {
+    casual: ['Signature Neutral 3N', 'Atelier Beige 3.2', 'Velvet Desert 2W', 'Atelier Porcelain 2.5'],
+    party: ['Atelier Warm 3.8', 'Velvet Tawny 3W', 'Radiance Amber 5.2', 'Radiance Deep 6.3'],
+    office: ['Atelier Porcelain 2.5', 'Signature Neutral 2N', 'Signature Neutral 3N', 'Velvet Desert 2W'],
+  },
+  apac: {
+    casual: ['Atelier Porcelain 2.5', 'Signature Neutral 2N', 'Atelier Beige 3.2', 'Velvet Desert 2W'],
+    party: ['Atelier Warm 3.8', 'Signature Neutral 4N', 'Velvet Tawny 3W', 'Radiance Amber 5.2'],
+    office: ['Atelier Porcelain 2.5', 'Signature Neutral 2N', 'Atelier Beige 3.2', 'Signature Neutral 3N'],
+  },
+};
+
+function limitCommonLuxuryFoundationShades(
+  shades: FoundationShade[],
+  occasion: string,
+  region: RegionKey,
+  shouldLimit: boolean,
+): FoundationShade[] {
+  if (!shouldLimit) return shades;
+
+  const preferredNames =
+    commonLuxuryFoundationByOccasion[region]?.[occasion] ||
+    commonLuxuryFoundationByOccasion.global[occasion] ||
+    commonLuxuryFoundationByOccasion.global.casual;
+  const shadeByName = new Map(shades.map((shade) => [shade.name.toLowerCase(), shade]));
+  const curated = preferredNames
+    .map((name) => shadeByName.get(name.toLowerCase()))
+    .filter((shade): shade is FoundationShade => !!shade);
+
+  const curatedNames = new Set(curated.map((shade) => shade.name.toLowerCase()));
+  const fallback = shades.filter((shade) => !curatedNames.has(shade.name.toLowerCase()));
+
+  return [...curated, ...fallback].slice(0, Math.min(4, shades.length));
+}
 
 type FoundationAnalysisPayload = {
   skin_tone?: string;
@@ -192,9 +294,6 @@ function deriveOccasionAwareShades(
     casual: 0,
     office: 4,
     party: -6,
-    wedding: 8,
-    festival: -2,
-    editorial: -10,
   };
 
   const analysisTone = normalizeSkinToneProfile(String(analysis.skin_tone || 'medium'));
@@ -261,6 +360,15 @@ interface FoundationTryOnInterfaceProps {
 const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, experienceType = 'store', skintone = 'medium', toneConfidence = 0, launchMode = 'store' }) => {
   const [selectedInhouseSetId, setSelectedInhouseSetId] = useState<'set-a' | 'set-b'>('set-a');
   const [selectedOccasion, setSelectedOccasion] = useState(occasionOptions[0].value);
+  const recommendationRegion = useMemo<RegionKey>(() => detectRegionFromLocale(), []);
+  const regionContext = useMemo(
+    () => ({
+      region: recommendationRegion,
+      locale: typeof navigator !== 'undefined' ? navigator.language : 'en-US',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    }),
+    [recommendationRegion],
+  );
   const activeInhouseSet = useMemo(
     () => inhouseCartridgeSets.find((set) => set.id === selectedInhouseSetId) || inhouseCartridgeSets[0],
     [selectedInhouseSetId],
@@ -273,12 +381,13 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
   const effectiveSkinTone = useMemo(() => normalizeSkinToneProfile(detectedSkinTone || skintone), [detectedSkinTone, skintone]);
   const foundationShades = useMemo(() => {
     const baseShades = experienceType === 'store' ? buildStoreShades(storeShadeRecipes) : buildInhouseShades(activeInhouseSet);
-    return adaptFoundationShadesForTone(baseShades, effectiveSkinTone);
+    return sanitizeFoundationShadeNames(adaptFoundationShadesForTone(baseShades, effectiveSkinTone));
   }, [experienceType, activeInhouseSet, effectiveSkinTone]);
   const [selectedShade, setSelectedShade] = useState<FoundationShade>(foundationShades[0]);
   // New: finish preset for realism
   const [finish, setFinish] = useState<'Matte' | 'Satin' | 'Radiant'>('Satin');
   const [lightingMode, setLightingMode] = useState<'day' | 'evening'>('day');
+  const [hasCapturedMonogramPortrait, setHasCapturedMonogramPortrait] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -544,7 +653,8 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
         body: JSON.stringify({
           image: imageData,
           foundation_color: normalizedColor,
-          finish // pass preset
+          finish,
+          region_context: regionContext,
         })
       });
       if (!response.ok) {
@@ -583,6 +693,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     if (!ctx) return;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageData = canvas.toDataURL('image/jpeg');
+    setHasCapturedMonogramPortrait(true);
     setCapturedImage(imageData);
     setErrorMessage('');
     setAnalysisReady(false);
@@ -599,6 +710,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
           image: imageData,
           foundation_color: selectedShade.hex,
           finish,
+          region_context: regionContext,
         }),
       });
 
@@ -623,13 +735,19 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
         : buildInhouseShades(activeInhouseSet);
       const toneAdapted = adaptFoundationShadesForTone(baseShades, analyzedTone);
       const occasionShades = deriveOccasionAwareShades(toneAdapted, analysis, selectedOccasion);
-
-      setProposedShades(occasionShades);
+      const sanitizedOccasionShades = sanitizeFoundationShadeNames(occasionShades);
+      const limitedOccasionShades = limitCommonLuxuryFoundationShades(
+        sanitizedOccasionShades,
+        selectedOccasion,
+        recommendationRegion,
+        experienceType === 'store' || launchMode === 'cartridge',
+      );
+      setProposedShades(limitedOccasionShades);
       setSelectedShade((previous) => {
-        const matched = occasionShades.find((shade) => shade.hex.toLowerCase() === previous.hex.toLowerCase());
-        return matched || occasionShades[0] || previous;
+        const matched = limitedOccasionShades.find((shade) => shade.hex.toLowerCase() === previous.hex.toLowerCase());
+        return matched || limitedOccasionShades[0] || previous;
       });
-      setAnalysisReady(occasionShades.length > 0);
+      setAnalysisReady(limitedOccasionShades.length > 0);
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'Unable to generate proposed shades.';
       setErrorMessage(`Captured image processed, but proposal analysis failed. (${reason})`);
@@ -642,6 +760,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
 
   // Retake photo
   const handleRetake = () => {
+    setHasCapturedMonogramPortrait(false);
     setCapturedImage(null);
     setProcessedImage(null);
     setFaceDetected(false);
@@ -700,6 +819,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
           cartridges: shade.mix.map((mixItem) => mixItem.cartridgeId),
           proportions: shade.mix.map((mixItem) => mixItem.percentage),
           quantity_ml: 0.5,
+          region_context: regionContext,
         }),
       }).catch(() => console.warn('Device dispense call failed (simulated).'));
     }
@@ -907,6 +1027,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
 
   // Close button handler
   const handleClose = () => {
+    setHasCapturedMonogramPortrait(false);
     setCapturedImage(null);
     setProcessedImage(null);
     setFaceDetected(false);
@@ -935,7 +1056,8 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           image: capturedImage,
-          foundation_color: selectedShade.hex
+          foundation_color: selectedShade.hex,
+          region_context: regionContext,
         })
       });
       const data = await resp.json();
@@ -963,13 +1085,19 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
       : buildInhouseShades(activeInhouseSet);
     const toneAdapted = adaptFoundationShadesForTone(baseShades, analyzedTone);
     const occasionShades = deriveOccasionAwareShades(toneAdapted, analysisPayload, selectedOccasion);
-
-    setProposedShades(occasionShades);
+    const sanitizedOccasionShades = sanitizeFoundationShadeNames(occasionShades);
+    const limitedOccasionShades = limitCommonLuxuryFoundationShades(
+      sanitizedOccasionShades,
+      selectedOccasion,
+      recommendationRegion,
+      experienceType === 'store' || launchMode === 'cartridge',
+    );
+    setProposedShades(limitedOccasionShades);
     setSelectedShade((previous) => {
-      const matched = occasionShades.find((shade) => shade.hex.toLowerCase() === previous.hex.toLowerCase());
-      return matched || occasionShades[0] || previous;
+      const matched = limitedOccasionShades.find((shade) => shade.hex.toLowerCase() === previous.hex.toLowerCase());
+      return matched || limitedOccasionShades[0] || previous;
     });
-  }, [selectedOccasion, capturedImage, analysisReady, fullAnalysis, experienceType, activeInhouseSet, effectiveSkinTone]);
+  }, [selectedOccasion, capturedImage, analysisReady, fullAnalysis, experienceType, launchMode, activeInhouseSet, effectiveSkinTone, recommendationRegion]);
 
   const cartridgeNameMap = useMemo(
     () => new Map(activeCartridges.map((cartridge) => [cartridge.id, cartridge.name])),
@@ -1016,7 +1144,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     }).slice(0, 2);
   }, [proposedShades, selectedShade]);
 
-  const showProposedShadesSection = capturedImage && analysisReady && proposedShades.length > 0;
+  const showProposedShadesSection = hasCapturedMonogramPortrait && capturedImage && analysisReady && proposedShades.length > 0;
 
   const isCartridgeSelectionMode = launchMode === 'cartridge';
 
@@ -1047,7 +1175,9 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
         : 'Maintain a single uniform pass; your base already reads balanced.';
 
     const suggestedShades = Array.isArray(fullAnalysis.suggested_shades)
-      ? fullAnalysis.suggested_shades.filter((shade: unknown) => typeof shade === 'string' && shade.trim().length > 0)
+      ? fullAnalysis.suggested_shades
+        .filter((shade: unknown) => typeof shade === 'string' && shade.trim().length > 0)
+        .map((shade: string) => normalizeShadeName(shade))
       : [];
 
     const conciergeTips = Array.isArray(fullAnalysis.luxury_recommendations)
@@ -1104,6 +1234,30 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
       }));
   }, [selectedShade.mix, cartridgeNameMap]);
 
+  const proposedShadeLinks = useMemo(() => {
+    return proposedShades.map((shade, index) => {
+      const sortedMix = [...shade.mix]
+        .sort((left, right) => right.percentage - left.percentage)
+        .slice(0, 3)
+        .map((mixItem) => ({
+          name: cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId,
+          percentage: Math.round(mixItem.percentage),
+        }));
+
+      const rank = index === 0 ? 'Top match' : index === 1 ? 'Strong match' : 'Alternative';
+      const formulaText = sortedMix.length > 0
+        ? sortedMix.map((item) => `${item.name} ${item.percentage}%`).join(' · ')
+        : 'Formula details unavailable';
+
+      return {
+        name: shade.name,
+        hex: shade.hex,
+        rank,
+        formulaText,
+      };
+    });
+  }, [proposedShades, cartridgeNameMap]);
+
   const expectedWearProfile = useMemo(() => {
     const baseHours = finish === 'Matte' ? 10 : finish === 'Satin' ? 8 : 7;
     const confidenceBoost = (luxuryAnalysisView?.confidenceValue || confidence || 82) >= 88 ? 1 : 0;
@@ -1135,6 +1289,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
             cartridges: selectedShade.mix.map((mixItem) => mixItem.cartridgeId),
             proportions: selectedShade.mix.map((mixItem) => mixItem.percentage),
             quantity_ml: 0.5,
+            region_context: regionContext,
           }),
         });
         setReservationMessage(`Dispense initiated for ${selectedShade.name}.`);
@@ -1151,6 +1306,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
           shade_name: selectedShade.name,
           shade_hex: selectedShade.hex,
           finish,
+          region_context: regionContext,
           cartridges: selectedShade.mix.map((mixItem) => ({
             cartridge_id: mixItem.cartridgeId,
             percentage: mixItem.percentage,
@@ -1253,7 +1409,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     setDeviceCartLoading(true);
     setDeviceCartMessage('');
     try {
-      const response = await fetch('/api/cart/add', {
+      const response = await apiFetch('/api/cart/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1291,7 +1447,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     const cartridgeName = cartridgeNameMap.get(cartridgeId) || cartridgeId;
     setCartLoadingById((previous) => ({ ...previous, [cartridgeId]: true }));
     try {
-      const response = await fetch('/api/cart/add', {
+      const response = await apiFetch('/api/cart/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1340,7 +1496,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     for (const mixItem of uniqueMix) {
       const cartridgeName = cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId;
       try {
-        const response = await fetch('/api/cart/add', {
+        const response = await apiFetch('/api/cart/add', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1392,25 +1548,51 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
         className="relative w-full max-w-5xl mx-auto my-6 rounded-3xl lux-card p-4 sm:p-6 md:p-8 flex flex-col gap-6 min-h-0"
         style={{ fontFamily: 'serif' }}
       >
-        {/* Header Row: Live tone + Close */}
-        <div className="w-full flex items-start justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 rounded-full border border-[#bfa77a] bg-white/90 px-3 py-1 text-xs">
-            <span className="font-semibold text-[#6d4c1e]">Live tone:</span>
-            <span className="font-bold text-[#bfa77a] capitalize">{effectiveSkinTone}</span>
-            {toneConfidence > 0 && <span className="text-[#6d4c1e]/70">({toneConfidence}%)</span>}
-            {launchMode === 'cartridge' && (
-              <span className="rounded-full border border-[#d4af37] bg-[#fffbe6] px-2 py-0.5 font-semibold text-[#6d4c1e]">
-                Refill Mode
-              </span>
-            )}
-          </div>
+        {/* Close Button */}
+        <button
+          className="absolute top-6 right-6 bg-[#d4af37] text-white rounded-full p-2 shadow hover:bg-black lux-cta-transition"
+          onClick={handleClose}
+        >
+          &#10005;
+        </button>
 
-          <button
-            className="bg-[#d4af37] text-white rounded-full p-2 shadow hover:bg-black lux-cta-transition"
-            onClick={handleClose}
-          >
-            &#10005;
-          </button>
+        {/* Header Row */}
+        <div className="w-full pr-14 sm:pr-0">
+          <div className="flex flex-col gap-1 sm:gap-2">
+            <div className="inline-flex w-auto items-center gap-2 self-start rounded-full border border-[#bfa77a] bg-white/90 px-3 py-1 text-xs">
+              <span className="font-semibold text-[#6d4c1e]">Live tone:</span>
+              <span className="font-bold text-[#bfa77a] capitalize">{effectiveSkinTone}</span>
+              {toneConfidence > 0 && <span className="text-[#6d4c1e]/70">({toneConfidence}%)</span>}
+              {launchMode === 'cartridge' && (
+                <span className="rounded-full border border-[#d4af37] bg-[#fffbe6] px-2 py-0.5 font-semibold text-[#6d4c1e]">
+                  Refill Mode
+                </span>
+              )}
+            </div>
+            <div className="inline-flex w-auto items-center gap-2 self-start rounded-full border border-[#d9c6a4] bg-white/90 px-3 py-1 text-xs">
+              <span className="font-semibold text-[#6d4c1e]">Region detected:</span>
+              <span className="font-bold text-[#bfa77a]">{regionDisplayLabel[recommendationRegion]}</span>
+              <span className="text-[#6d4c1e]/70">({regionContext.locale})</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="md:hidden w-full">
+          <div className="mb-1 flex flex-col sm:flex-row sm:justify-center sm:items-center items-start gap-2">
+            <label htmlFor="foundation-occasion-select-mobile" className="sm:mr-2 font-semibold lux-muted">
+              Occasion:
+            </label>
+            <select
+              id="foundation-occasion-select-mobile"
+              value={selectedOccasion}
+              onChange={(e) => setSelectedOccasion(e.target.value)}
+              className="w-full sm:w-auto border border-[#bfa77a] rounded-lg px-4 py-2 bg-white/90 text-[#5b4632] font-medium shadow"
+            >
+              {occasionOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Main Content Layout */}
@@ -1536,7 +1718,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                 </div>
               )}
               {/* Processed Image Preview: Show below camera after capture */}
-              {capturedImage && (
+              {capturedImage && hasCapturedMonogramPortrait && (
                 <div className="mt-6 w-full max-w-md mx-auto">
                   <div className="lux-card rounded-xl p-4">
                     <div className="font-bold text-[#bfa77a] mb-2">Processed Image Preview</div>
@@ -1631,7 +1813,8 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
             {!capturedImage && experienceType === 'in-house' && (
               <div className="mt-4 w-full max-w-md mx-auto">
                 <div className="lux-card rounded-xl p-3">
-                  <div className="text-xs font-semibold text-[#6d4c1e] mb-2">In-home cartridge sets</div>
+                  <div className="text-xs font-semibold text-[#6d4c1e] mb-1">Detected cartridges in device</div>
+                  <div className="text-[11px] text-[#6d4c1e]/70 mb-2">AI detected these 3 loaded cartridges. Switch only if your physical load is different.</div>
                   <div className="flex flex-wrap gap-2">
                     {inhouseCartridgeSets.map((set) => (
                       <button
@@ -1658,18 +1841,20 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                   mode="foundation"
                   targetHex={selectedShade.hex}
                   title={
-                    isCartridgeSelectionMode
-                      ? experienceType === 'store'
+                    experienceType === 'in-house'
+                      ? `${activeInhouseSet.label} — 3 cartridges loaded`
+                      : isCartridgeSelectionMode
                         ? 'Cartridge Selection Formula'
-                        : 'Your Cartridge Selection Formula'
-                      : experienceType === 'store'
-                        ? 'Cartridge Formula (Buy)'
-                        : 'Your cartridge formula'
+                        : 'Cartridge Formula (Buy)'
                   }
                   selectedShadeName={selectedShade.name}
                   cartridges={activeCartridges}
                   proposedShades={marqueeProposedShades}
-                  highlightCartridgeIds={selectedShade.mix.map((mixItem) => mixItem.cartridgeId)}
+                  highlightCartridgeIds={
+                    experienceType === 'in-house'
+                      ? activeInhouseSet.cartridges.map((c) => c.id)
+                      : selectedShade.mix.map((mixItem) => mixItem.cartridgeId)
+                  }
                   mixBreakdown={selectedShade.mix.map((mixItem) => ({
                     cartridgeId: mixItem.cartridgeId,
                     percentage: mixItem.percentage,
@@ -1683,9 +1868,11 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                   scrollDurationSeconds={36}
                 />
                 <div className="text-[11px] text-[#6d4c1e]/75 mt-1 text-center px-3">
-                  {isCartridgeSelectionMode
-                    ? 'Selection source: this section shows the active 3-cartridge blend mapped to your selected shade.'
-                    : 'Formula source: this section shows the physical 3-cartridge recipe for the selected shade.'}
+                  {experienceType === 'in-house'
+                    ? 'These 3 cartridges were detected as loaded in your device — the shades above are all blends achievable from them.'
+                    : isCartridgeSelectionMode
+                      ? 'Selection source: this section shows the active 3-cartridge blend mapped to your selected shade.'
+                      : 'Formula source: this section shows the physical 3-cartridge recipe for the selected shade.'}
                 </div>
               </>
             )}
@@ -1694,7 +1881,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
           {/* Right Section - Recommended Foundation Details */}
           <div className="flex-1 flex flex-col items-center justify-start min-w-0">
             <div className="w-full max-w-md mx-auto mt-0 lg:sticky lg:top-10">
-              <div className="mb-4 flex flex-col sm:flex-row sm:justify-center sm:items-center items-start gap-2">
+              <div className="hidden md:flex mb-4 flex-col sm:flex-row sm:justify-center sm:items-center items-start gap-2">
                 <label htmlFor="foundation-occasion-select" className="sm:mr-2 font-semibold lux-muted">
                   Occasion:
                 </label>
@@ -1747,6 +1934,31 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                       onSelect={handleShadeSelect}
                       isApplying={!!capturedImage && isProcessing}
                     />
+                  </div>
+
+                  <div className="lux-card rounded-xl px-4 py-4 mb-4">
+                    <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Shade Formula Links</div>
+                    <div className="space-y-2">
+                      {proposedShadeLinks.map((item) => (
+                        <button
+                          key={`foundation-link-${item.hex}`}
+                          type="button"
+                          onClick={() => {
+                            const linkedShade = proposedShades.find((shade) => shade.hex === item.hex);
+                            if (linkedShade) handleShadeSelect(linkedShade);
+                          }}
+                          disabled={isProcessing}
+                          className="w-full text-left rounded-lg border border-[#d9c6a4] bg-[#fdf6f0] px-3 py-2 hover:bg-white lux-cta-transition disabled:opacity-60"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-[#6d4c1e] truncate">{item.name}</span>
+                            <span className="text-[10px] font-semibold text-[#bfa77a] uppercase tracking-wide">{item.rank}</span>
+                          </div>
+                          <div className="text-[11px] text-[#6d4c1e]/85 mt-1">{item.formulaText}</div>
+                          <div className="text-[11px] text-[#6d4c1e]/70 mt-1">Optimized for {selectedOccasion} · {finish} finish</div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="lux-card rounded-xl px-6 py-4 lux-smooth-panel" key={`details-${selectedShade.hex}-${finish}-${lightingMode}`}>
@@ -1815,7 +2027,13 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                   )}
 
                   <div className="lux-card rounded-xl px-6 py-4 mt-4">
+                {experienceType === 'in-house' ? (
+                <div className="font-bold text-base text-[#6d4c1e] mb-2">Dispense This Curated Shade</div>
+                ) : (
                 <div className="font-bold text-base text-[#6d4c1e] mb-2">Checkout Assistant</div>
+                )}
+                {experienceType !== 'in-house' && (
+                <>
                 <button
                   type="button"
                   onClick={handleAddAllCartridgesToCart}
@@ -1838,27 +2056,27 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                     Reset added items
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={handleReserveFormula}
-                  className="main-action-btn w-full"
-                  disabled={reservationLoading}
-                >
-                  {reservationLoading
-                    ? experienceType === 'in-house'
-                      ? 'Dispensing Selected Shade...'
-                      : 'Reserving Formula...'
-                    : experienceType === 'in-house'
-                      ? 'Dispense Selected Shade'
-                      : 'Reserve this Formula'}
-                </button>
-                {reservationMessage && (
-                  <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
-                    {reservationReference && (
-                      <div className="font-semibold text-[#bfa77a] mb-1">Ref: {reservationReference}</div>
+                </>
+                )}
+                {experienceType === 'in-house' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleReserveFormula}
+                      className="main-action-btn w-full"
+                      disabled={reservationLoading}
+                    >
+                      {reservationLoading ? 'Dispensing Selected Shade...' : 'Dispense Selected Shade'}
+                    </button>
+                    {reservationMessage && (
+                      <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                        {reservationReference && (
+                          <div className="font-semibold text-[#bfa77a] mb-1">Ref: {reservationReference}</div>
+                        )}
+                        {reservationMessage}
+                      </div>
                     )}
-                    {reservationMessage}
-                  </div>
+                  </>
                 )}
 
                 {experienceType !== 'in-house' && (
@@ -1899,6 +2117,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                   </div>
                 )}
 
+                {experienceType !== 'in-house' && (
                 <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
                   <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Cartridge Refill Plan</div>
                   <div className="space-y-1 text-xs text-[#6d4c1e]">
@@ -1924,6 +2143,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                     ))}
                   </div>
                 </div>
+                )}
 
                 <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
                   <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Wear Guidance</div>
@@ -1942,7 +2162,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
             </div>
           </div>
         </div>
-        {capturedImage ? (
+        {capturedImage && hasCapturedMonogramPortrait ? (
           <>
             <button
               className="main-action-btn mt-4"

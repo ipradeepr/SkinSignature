@@ -10,12 +10,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
   selectedConfig,
   onConfigChange,
 }) => {
-  const [hasConfigBeenChanged, setHasConfigBeenChanged] = React.useState(false);
-
   const handleConfigSelect = (config: 'foundation' | 'lipstick') => {
-    if (config !== selectedConfig) {
-      setHasConfigBeenChanged(true);
-    }
     onConfigChange(config);
   };
 
@@ -43,9 +38,9 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
         <div>
           <h3 className="text-xl sm:text-2xl font-semibold lux-title mb-3 sm:mb-4">Luxury AI Beauty Intelligence, Now Personalized by Mode</h3>
           <p className="lux-muted leading-relaxed text-sm sm:text-base">
-            Skin Signature now adapts to how you shop and apply beauty: In-Store Experience, In-house Experience, and Luxury Standards.
+            Skin Signature now adapts to how you shop and apply beauty: In-Store Experience, In-house Experience, and Refill Cartridges.
             In real time, AI analyzes your live skin signal—tone, undertone, texture, and lighting—to determine your best-match shades,
-            then recommends couture-level foundation and lipstick looks with instantly visualized shade-to-cartridge mapping in Luxury Standards mode.
+            then recommends couture-level foundation and lipstick looks with instantly visualized shade-to-cartridge mapping in Refill Cartridges mode.
           </p>
         </div>
         
@@ -79,9 +74,6 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
             onClick={() => handleConfigSelect('foundation')}
             aria-pressed={selectedConfig === 'foundation'}
           >
-            {!hasConfigBeenChanged && selectedConfig === 'foundation' && (
-              <span className="config-default-badge">Default</span>
-            )}
             {selectedConfig === 'foundation' ? '✓ Foundation' : 'Foundation'}
           </button>
           <button
@@ -90,9 +82,6 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
             onClick={() => handleConfigSelect('lipstick')}
             aria-pressed={selectedConfig === 'lipstick'}
           >
-            {!hasConfigBeenChanged && selectedConfig === 'lipstick' && (
-              <span className="config-default-badge">Default</span>
-            )}
             {selectedConfig === 'lipstick' ? '✓ Lipstick' : 'Lipstick'}
           </button>
         </div>

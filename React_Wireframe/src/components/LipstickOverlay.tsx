@@ -51,6 +51,11 @@ const luxurySuggestions: Record<string, Record<string, string[]>> = {
   },
 };
 
+const normalizeShadeName = (name: string): string =>
+  String(name || '')
+    .replace(/^\s*(LV|DIOR|MAC|NARS|YSL|CHANEL|GUCCI|FENTY|ARMANI|ESTEE\s+LAUDER)[\s-]+/i, '')
+    .trim();
+
 const LipstickOverlay: React.FC<{ skintone?: 'fair' | 'medium' | 'deep' }> = ({ skintone = 'medium' }) => {
   const [selectedOccasion, setSelectedOccasion] = useState(occasionOptions[0].value);
 
@@ -98,7 +103,7 @@ const LipstickOverlay: React.FC<{ skintone?: 'fair' | 'medium' | 'deep' }> = ({ 
         </div>
         <ul className="lux-muted text-sm leading-relaxed ml-4">
           {luxurySuggestions[skintone][selectedOccasion].map((suggestion) => (
-            <li key={suggestion}>• {suggestion}</li>
+            <li key={suggestion}>• {normalizeShadeName(suggestion)}</li>
           ))}
         </ul>
       </div>

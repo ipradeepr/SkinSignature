@@ -100,7 +100,7 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
   const analysisIntervalRef = useRef<number | null>(null);
 
   // --- Config State ---
-  const [selectedConfig, setSelectedConfig] = useState<'foundation' | 'lipstick'>('foundation');
+  const [selectedConfig, setSelectedConfig] = useState<'foundation' | 'lipstick'>('lipstick');
 
   // --- Modal State for Full Analysis ---
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
@@ -408,8 +408,7 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
 
   // --- Config Effect ---
   useEffect(() => {
-    // Example: if selectedSize is 'Portable Pro', use foundation, else lipstick
-    setSelectedConfig(selectedSize === 'Portable Pro' ? 'foundation' : 'lipstick');
+    setSelectedConfig('lipstick');
   }, [selectedSize]);
 
   // --- Use foundation overlay when in skin-analysis view and foundation is selected ---
@@ -498,7 +497,7 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
               <div className="lux-card rounded-2xl p-6">
                 <h3 className="text-xl font-semibold mb-3 lux-title">
                   {launchMode === 'cartridge'
-                    ? 'Luxury Standards Mode (Cartridge Blending & Purchase)'
+                    ? 'Refill Cartridges Mode (Cartridge Blending & Purchase)'
                     : experienceType === 'store'
                       ? 'Boutique AI Try-On (Store Experience)'
                       : 'Personalized AI Try-On (In-house Experience)'}
@@ -526,7 +525,7 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
                   <div className="p-3 rounded-xl bg-white/80 border border-[#d4af37]/40">
                     <div className="font-semibold lux-title">
                       {launchMode === 'cartridge'
-                        ? 'Luxury Standards Guide'
+                        ? 'Refill Cartridges Guide'
                         : experienceType === 'store'
                           ? 'OMS-Curated Shades'
                           : 'Device Cartridge Blends'}

@@ -43,7 +43,7 @@ const storeLipstickCartridges: Cartridge[] = [
 const inhouseLipstickSets: LipstickCartridgeSet[] = [
   {
     id: 'set-a',
-    label: 'Set A (Nude-Rose)',
+    label: 'Nude Rose Blend',
     cartridges: [
       { id: 'LA', name: 'Nude Base', hex: '#D2A679' },
       { id: 'LB', name: 'Rose Core', hex: '#C48793' },
@@ -52,7 +52,7 @@ const inhouseLipstickSets: LipstickCartridgeSet[] = [
   },
   {
     id: 'set-b',
-    label: 'Set B (Coral-Red)',
+    label: 'Coral Red Blend',
     cartridges: [
       { id: 'LD', name: 'Coral Base', hex: '#FF7F50' },
       { id: 'LE', name: 'True Red', hex: '#C72C48' },
@@ -69,6 +69,12 @@ const inhouseLipstickRatios = [
   [26, 34, 40],
   [16, 32, 52],
 ];
+
+function normalizeShadeName(name: string): string {
+  return String(name || '')
+    .replace(/^\s*(LV|DIOR|MAC|NARS|YSL|CHANEL|GUCCI|FENTY|ARMANI|ESTEE\s+LAUDER)[\s-]+/i, '')
+    .trim();
+}
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const h = hex.trim().replace('#', '');
@@ -161,9 +167,6 @@ const occasionOptions = [
   { value: 'casual', label: 'Casual' },
   { value: 'party', label: 'Party' },
   { value: 'office', label: 'Office' },
-  { value: 'wedding', label: 'Wedding' },
-  { value: 'festival', label: 'Festival' },
-  { value: 'editorial', label: 'Editorial' },
 ];
 
 type LipstickBackendAnalysis = {
@@ -184,9 +187,9 @@ function deriveLipstickProposals(
   if (shades.length === 0) return [];
 
   const occasionOffset: Record<string, number> = {
-    casual: 0,
-    office: 6,
-    party: -8,
+    casual: -7,
+    office: -3,
+    party: -12,
     wedding: 8,
     festival: -4,
     editorial: -12,
@@ -199,10 +202,163 @@ function deriveLipstickProposals(
   const confidence = Math.max(0, Math.min(100, Number(analysis.confidence || 0)));
   const confidenceOffset = confidence >= 90 ? 0 : confidence >= 75 ? 2 : 5;
   const targetLuma = baseTarget + (occasionOffset[occasion] ?? 0) + finishOffset + lipTypeOffset + confidenceOffset;
+  const redTokens = ['red', 'rouge', 'scarlet', 'crimson', 'cherry', 'ruby'];
+  const isOffice = occasion === 'office';
 
   return [...shades]
-    .sort((left, right) => Math.abs(toneLuma(left.hex) - targetLuma) - Math.abs(toneLuma(right.hex) - targetLuma))
+    .sort((left, right) => {
+      const leftLuma = toneLuma(left.hex);
+      const rightLuma = toneLuma(right.hex);
+      const leftIsRed = redTokens.some((token) => left.name.toLowerCase().includes(token));
+      const rightIsRed = redTokens.some((token) => right.name.toLowerCase().includes(token));
+
+      let leftScore = Math.abs(leftLuma - targetLuma);
+      let rightScore = Math.abs(rightLuma - targetLuma);
+
+      if (isOffice) {
+        if (leftLuma > 148) leftScore += 8;
+        if (rightLuma > 148) rightScore += 8;
+      } else {
+        if (leftLuma > 138) leftScore += 8;
+        if (rightLuma > 138) rightScore += 8;
+        if (leftIsRed) leftScore -= 7;
+        if (rightIsRed) rightScore -= 7;
+      }
+
+      return leftScore - rightScore;
+    })
     .slice(0, Math.min(6, shades.length));
+}
+
+type RegionKey = 'global' | 'americas' | 'emea' | 'apac';
+
+const regionDisplayLabel: Record<RegionKey, string> = {
+  global: 'Global',
+  americas: 'Americas',
+  emea: 'EMEA',
+  apac: 'APAC',
+};
+
+function detectRegionFromLocale(): RegionKey {
+  if (typeof navigator === 'undefined') return 'global';
+
+  const locales = Array.from(
+    new Set([
+      navigator.language,
+      ...(Array.isArray(navigator.languages) ? navigator.languages : []),
+    ].filter(Boolean).map((value) => String(value).toLowerCase())),
+  );
+
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone?.toLowerCase() || '';
+  if (timezone.startsWith('asia/') || timezone.startsWith('australia/')) return 'apac';
+  if (timezone.startsWith('america/')) return 'americas';
+  if (timezone.startsWith('europe/') || timezone.startsWith('africa/')) return 'emea';
+
+  const getCountryCode = (locale: string): string => {
+    const parts = locale.split(/[-_]/).map((part) => part.toLowerCase());
+    for (let index = parts.length - 1; index >= 0; index -= 1) {
+      if (parts[index].length === 2) return parts[index];
+    }
+    return '';
+  };
+
+  const countries = new Set(locales.map(getCountryCode).filter(Boolean));
+  const hasCountry = (codes: string[]) => codes.some((code) => countries.has(code));
+
+  if (hasCountry(['in', 'cn', 'jp', 'kr', 'th', 'vi', 'sg', 'hk', 'my', 'id', 'ph', 'au', 'nz', 'tw'])) return 'apac';
+  if (hasCountry(['us', 'ca', 'mx', 'br', 'ar', 'cl', 'co', 'pe'])) return 'americas';
+  if (hasCountry(['gb', 'fr', 'de', 'it', 'es', 'pt', 'nl', 'be', 'ch', 'se', 'no', 'dk', 'fi', 'ie', 'ae', 'sa', 'qa', 'kw', 'om', 'za', 'eg', 'tr'])) return 'emea';
+
+  if (locales.some((locale) => locale.startsWith('zh-') || locale.startsWith('ja-') || locale.startsWith('ko-') || locale.startsWith('th-') || locale.startsWith('vi-') || locale.startsWith('hi-') || locale.startsWith('bn-') || locale.startsWith('ta-') || locale.startsWith('te-') || locale.startsWith('ml-') || locale.startsWith('mr-') || locale.startsWith('gu-') || locale.startsWith('kn-') || locale.startsWith('en-in'))) return 'apac';
+  if (locales.some((locale) => locale.startsWith('en-us') || locale.startsWith('en-ca') || locale.startsWith('es-mx') || locale.startsWith('pt-br'))) return 'americas';
+  if (locales.some((locale) => locale.startsWith('en-gb') || locale.startsWith('fr-') || locale.startsWith('de-') || locale.startsWith('it-') || locale.startsWith('es-') || locale.startsWith('ar-'))) return 'emea';
+
+  return 'global';
+}
+
+const commonLuxuryLipstickByOccasion: Record<RegionKey, Record<string, string[]>> = {
+  global: {
+    casual: ['Rouge Allure', 'Scarlet Kiss', 'Midnight Plum', 'Terracotta Brick'],
+    party: ['Scarlet Kiss', 'Midnight Plum', 'Wild Fuchsia', 'Terracotta Brick'],
+    office: ['Soft Beige', 'Warm Sand', 'Dusty Rosewood', 'Rich Aubergine'],
+  },
+  americas: {
+    casual: ['Rouge Allure', 'Scarlet Kiss', 'Midnight Plum', 'Terracotta Brick'],
+    party: ['Scarlet Kiss', 'Wild Fuchsia', 'Midnight Plum', 'Terracotta Brick'],
+    office: ['Soft Beige', 'Warm Sand', 'Dusty Rosewood', 'Rich Aubergine'],
+  },
+  emea: {
+    casual: ['Rouge Allure', 'Scarlet Kiss', 'Midnight Plum', 'Terracotta Brick'],
+    party: ['Scarlet Kiss', 'Midnight Plum', 'Terracotta Brick', 'Wild Fuchsia'],
+    office: ['Soft Beige', 'Warm Sand', 'Dusty Rosewood', 'Rich Aubergine'],
+  },
+  apac: {
+    casual: ['Rouge Allure', 'Scarlet Kiss', 'Midnight Plum', 'Deep Amethyst'],
+    party: ['Scarlet Kiss', 'Midnight Plum', 'Wild Fuchsia', 'Terracotta Brick'],
+    office: ['Soft Beige', 'Warm Sand', 'Dusty Rosewood', 'Rich Aubergine'],
+  },
+};
+
+function limitCommonLuxuryLipstickShades(
+  shades: MixedLipstick[],
+  occasion: string,
+  region: RegionKey,
+  shouldLimit: boolean,
+): MixedLipstick[] {
+  let baseList = shades;
+
+  if (shouldLimit) {
+    const preferredNames =
+      commonLuxuryLipstickByOccasion[region]?.[occasion] ||
+      commonLuxuryLipstickByOccasion.global[occasion] ||
+      commonLuxuryLipstickByOccasion.global.casual;
+    const shadeByName = new Map(shades.map((shade) => [shade.name.toLowerCase(), shade]));
+    const curated = preferredNames
+      .map((name) => shadeByName.get(name.toLowerCase()))
+      .filter((shade): shade is MixedLipstick => !!shade);
+
+    const curatedNames = new Set(curated.map((shade) => shade.name.toLowerCase()));
+    const fallback = shades.filter((shade) => !curatedNames.has(shade.name.toLowerCase()));
+    baseList = [...curated, ...fallback].slice(0, Math.min(4, shades.length));
+  }
+
+  if (occasion !== 'office') return baseList;
+
+  const lighterThreshold = 142;
+  const lighter = baseList.filter((shade) => toneLuma(shade.hex) >= lighterThreshold);
+  const darker = baseList.filter((shade) => toneLuma(shade.hex) < lighterThreshold);
+
+  const firstDark = darker[0] ? [darker[0]] : [];
+  const oneLighter = lighter[0] ? [lighter[0]] : [];
+  const remaining = [...darker.slice(1), ...lighter.slice(1)];
+  const rebalanced = [...firstDark, ...oneLighter, ...remaining];
+  return rebalanced.slice(0, Math.min(4, rebalanced.length));
+}
+
+function pickDefaultLipstickByOccasion(shades: MixedLipstick[]): MixedLipstick | undefined {
+  if (shades.length === 0) return undefined;
+
+  const redTokens = ['red', 'rouge', 'scarlet', 'crimson', 'cherry', 'ruby'];
+  const isRedBased = (shade: MixedLipstick) => redTokens.some((token) => shade.name.toLowerCase().includes(token));
+
+  const redCandidates = shades.filter(isRedBased);
+  if (redCandidates.length > 0) {
+    return [...redCandidates].sort((left, right) => toneLuma(left.hex) - toneLuma(right.hex))[0];
+  }
+
+  return [...shades].sort((left, right) => toneLuma(left.hex) - toneLuma(right.hex))[0];
+}
+
+function applyIntensityToPercentage(basePercentage: number, opacity: number): number {
+  const normalizedOpacity = Math.max(0, Math.min(100, opacity));
+  return Math.max(0, Math.round((basePercentage * normalizedOpacity) / 100));
+}
+
+function applyIntensityToMix(mix: ShadeMix[], opacity: number): ShadeMix[] {
+  return mix.map((mixItem) => ({
+    cartridgeId: mixItem.cartridgeId,
+    percentage: applyIntensityToPercentage(mixItem.percentage, opacity),
+  }));
 }
 
 // General palettes (used by store experience or as fallback)
@@ -216,18 +372,18 @@ const colorPalettes: Record<string, Lipstick[]> = {
     { name: 'Dusty Rose', hex: '#d6a5c9', color: 'rgb(214,165,201)' },
   ],
   party: [
-    { name: 'LV Crimson Allure', hex: '#c8102e', color: 'rgb(200,16,46)' },
-    { name: 'LV Gold Red', hex: '#a50000', color: 'rgb(165,0,0)' },
-    { name: 'LV Rouge 999', hex: '#c72c41', color: 'rgb(199,44,65)' },
-    { name: 'LV Pirate Rouge', hex: '#c8102e', color: 'rgb(200,16,46)' },
-    { name: 'LV Le Rouge', hex: '#e03c31', color: 'rgb(224,60,49)' },
+    { name: 'Crimson Allure', hex: '#c8102e', color: 'rgb(200,16,46)' },
+    { name: 'Gold Red', hex: '#a50000', color: 'rgb(165,0,0)' },
+    { name: 'Rouge 999', hex: '#c72c41', color: 'rgb(199,44,65)' },
+    { name: 'Pirate Rouge', hex: '#c8102e', color: 'rgb(200,16,46)' },
+    { name: 'Le Rouge', hex: '#e03c31', color: 'rgb(224,60,49)' },
   ],
   office: [
-    { name: 'LV Sand Veil', hex: '#d6b48c', color: 'rgb(214,180,140)' },
-    { name: 'LV Pensive Plum', hex: '#7a4b8a', color: 'rgb(122,75,138)' },
-    { name: 'LV Beige Tribute', hex: '#d6b48c', color: 'rgb(214,180,140)' },
-    { name: 'LV Rosewood Veil', hex: '#c08081', color: 'rgb(192,128,129)' },
-    { name: 'LV Urban Cocoa', hex: '#8b5b29', color: 'rgb(139,91,41)' },
+    { name: 'Sand Veil', hex: '#d6b48c', color: 'rgb(214,180,140)' },
+    { name: 'Pensive Plum', hex: '#7a4b8a', color: 'rgb(122,75,138)' },
+    { name: 'Beige Tribute', hex: '#d6b48c', color: 'rgb(214,180,140)' },
+    { name: 'Rosewood Veil', hex: '#c08081', color: 'rgb(192,128,129)' },
+    { name: 'Urban Cocoa', hex: '#8b5b29', color: 'rgb(139,91,41)' },
   ],
 };
 
@@ -237,25 +393,16 @@ const luxurySuggestions: Record<string, Record<string, string[]>> = {
     casual: ['LV Nude Lavalliere', 'LV Urban Beige', 'LV Rose Adrienne'],
     party: ['LV Cherry Lush', 'LV Goldie Red', 'LV Rouge 999'],
     office: ['LV Sand Veil', 'LV Pensive Plum', 'LV Beige Tribute'],
-    wedding: ['LV Pillow Rose', 'LV Lip Glow Pink', 'LV Mademoiselle Rose'],
-    festival: ['LV Candy Venom', 'LV Vinyl Fuchsia', 'LV Lady Danger'],
-    editorial: ['LV Flesh 3', 'LV Midnight Bleu', 'LV Ruby Couture'],
   },
   medium: {
     casual: ['LV Be Dior', 'LV Corail Shine', 'LV Blaze of Noon'],
     party: ['LV Scarlet Rouge', 'LV Pirate Rouge', 'LV Red Smile'],
     office: ['LV Sultan Rose', 'LV Rose Stiletto', 'LV Mildred Rosewood'],
-    wedding: ['LV Rose Atelier', 'LV Bombshell Nude', 'LV Natural Rosewood'],
-    festival: ['LV Saw-C Coral', 'LV Schiap Pink', 'LV Coral Tatouage'],
-    editorial: ['LV Deep Orchid', 'LV Liv Berry', 'LV Diva Red'],
   },
   deep: {
     casual: ['LV Argentina Rose', 'LV Jean Cocoa', 'LV Black Tie'],
     party: ['LV Velvet Cherry', 'LV Le Rouge', 'LV Ambitious Rouge'],
     office: ['LV Drama Matte', 'LV Janet Rust', 'LV Rouge Noir'],
-    wedding: ['LV Stunna Uncuffed', 'LV Twig Rose', 'LV Elson Red'],
-    festival: ['LV Uncensored', 'LV Transylvania', 'LV Jungle Red'],
-    editorial: ['LV Blood 2', 'LV Cyber Plum', 'LV Ingrid Deep'],
   },
 };
 
@@ -293,27 +440,36 @@ interface LipstickTryOnInterfaceProps {
 
 const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skintone = 'medium', experienceType = 'store', launchMode = 'store' }) => {
   const [selectedOccasion, setSelectedOccasion] = useState(occasionOptions[0].value);
+  const recommendationRegion = useMemo<RegionKey>(() => detectRegionFromLocale(), []);
+  const regionContext = useMemo(
+    () => ({
+      region: recommendationRegion,
+      locale: typeof navigator !== 'undefined' ? navigator.language : 'en-US',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    }),
+    [recommendationRegion],
+  );
   const [selectedInhouseSetId, setSelectedInhouseSetId] = useState<'set-a' | 'set-b'>('set-a');
   const [detectedSkinTone, setDetectedSkinTone] = useState<SkinToneProfile>(normalizeSkinTone(skintone));
   // OMS/store and in-house palettes (available as base sets)
   const storeLipstickPalettes: Record<string, Lipstick[]> = {
     casual: [
-      { name: 'LV-CR001', hex: '#c72c41', color: 'rgb(199,44,65)' },
-      { name: 'LV-NU110', hex: '#c8a68c', color: 'rgb(200,166,140)' },
-      { name: 'LV-PR080', hex: '#7B294E', color: 'rgb(123,41,78)' },
-      { name: 'LV-EDG777', hex: '#4B244A', color: 'rgb(75,36,74)' },
+      { name: 'Rouge Allure', hex: '#c72c41', color: 'rgb(199,44,65)' },
+      { name: 'Nude Rose', hex: '#c8a68c', color: 'rgb(200,166,140)' },
+      { name: 'Velvet Plum', hex: '#7B294E', color: 'rgb(123,41,78)' },
+      { name: 'Deep Amethyst', hex: '#4B244A', color: 'rgb(75,36,74)' },
     ],
     party: [
-      { name: 'LV-RD999', hex: '#c8102e', color: 'rgb(200,16,46)' },
-      { name: 'LV-FC120', hex: '#e43f6f', color: 'rgb(228,63,111)' },
-      { name: 'LV-BR075', hex: '#8B3A3A', color: 'rgb(139,58,58)' },
-      { name: 'LV-EDG005', hex: '#4B244A', color: 'rgb(75,36,74)' },
+      { name: 'Scarlet Kiss', hex: '#c8102e', color: 'rgb(200,16,46)' },
+      { name: 'Wild Fuchsia', hex: '#e43f6f', color: 'rgb(228,63,111)' },
+      { name: 'Terracotta Brick', hex: '#8B3A3A', color: 'rgb(139,58,58)' },
+      { name: 'Midnight Plum', hex: '#4B244A', color: 'rgb(75,36,74)' },
     ],
     office: [
-      { name: 'LV-ND042', hex: '#d2a679', color: 'rgb(210,166,121)' },
-      { name: 'LV-RW055', hex: '#b76e79', color: 'rgb(183,110,121)' },
-      { name: 'LV-BE018', hex: '#c8a68c', color: 'rgb(200,166,140)' },
-      { name: 'LV-EDG888', hex: '#4B244A', color: 'rgb(75,36,74)' },
+      { name: 'Warm Sand', hex: '#d2a679', color: 'rgb(210,166,121)' },
+      { name: 'Dusty Rosewood', hex: '#b76e79', color: 'rgb(183,110,121)' },
+      { name: 'Soft Beige', hex: '#c8a68c', color: 'rgb(200,166,140)' },
+      { name: 'Rich Aubergine', hex: '#4B244A', color: 'rgb(75,36,74)' },
     ],
   };
   const activeInhouseSet = useMemo(
@@ -457,6 +613,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     const adapted = adaptLipsticksForSkinTone(fromPalette, effectiveSkinTone);
     return adapted.map((shade) => ({
       ...shade,
+      name: normalizeShadeName(shade.name),
       mix: inferMixFromShade(shade.hex, activeCartridges),
     }));
   }, [experienceType, activeInhouseSet, finish, selectedOccasion, basePalettes, effectiveSkinTone, activeCartridges]);
@@ -480,6 +637,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     }
   }, [activeLipstickShades, analysisReady]);
   const [lipstickOpacity, setLipstickOpacity] = useState(70);
+  const [hasCapturedMonogramPortrait, setHasCapturedMonogramPortrait] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const liveLipCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -557,8 +715,13 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     [activeCartridges],
   );
 
+  const intensityAdjustedSelectedMix = useMemo(
+    () => applyIntensityToMix(selectedLipstick.mix, lipstickOpacity),
+    [selectedLipstick.mix, lipstickOpacity],
+  );
+
   const replenishmentPlan = useMemo(() => {
-    return [...selectedLipstick.mix]
+    return [...intensityAdjustedSelectedMix]
       .sort((left, right) => right.percentage - left.percentage)
       .map((mixItem, index) => ({
         cartridgeId: mixItem.cartridgeId,
@@ -567,7 +730,31 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
         priority: index === 0 ? 'Priority refill' : index === 1 ? 'Secondary refill' : 'Support refill',
         etaDays: index === 0 ? 16 : index === 1 ? 22 : 28,
       }));
-  }, [selectedLipstick.mix, cartridgeNameMap]);
+  }, [intensityAdjustedSelectedMix, cartridgeNameMap]);
+
+  const proposedShadeLinks = useMemo(() => {
+    return proposedLipstickShades.map((shade, index) => {
+      const sortedMix = [...shade.mix]
+        .sort((left, right) => right.percentage - left.percentage)
+        .slice(0, 3)
+        .map((mixItem) => ({
+          name: cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId,
+          percentage: applyIntensityToPercentage(mixItem.percentage, lipstickOpacity),
+        }));
+
+      const rank = index === 0 ? 'Top match' : index === 1 ? 'Strong match' : 'Alternative';
+      const formulaText = sortedMix.length > 0
+        ? sortedMix.map((item) => `${item.name} ${item.percentage}%`).join(' · ')
+        : 'Formula details unavailable';
+
+      return {
+        hex: shade.hex,
+        name: shade.name,
+        rank,
+        formulaText,
+      };
+    });
+  }, [proposedLipstickShades, cartridgeNameMap, lipstickOpacity]);
 
   const expectedWearProfile = useMemo(() => {
     const baseHours = finish === 'matte' ? 8 : 6;
@@ -589,14 +776,19 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
   const finishLightingProfile = useMemo(() => {
     const isEvening = lightingMode === 'evening';
     const baseAlpha = Math.max(0.1, Math.min(1, lipstickOpacity / 100));
-    const finishBoost = finish === 'glossy' ? 1.08 : 0.96;
+    const finishBoost = finish === 'glossy' ? 1.2 : 0.84;
     const lightingBoost = isEvening ? 1.1 : 0.98;
+    const mediaFilter = finish === 'glossy'
+      ? (isEvening
+          ? 'brightness(0.99) contrast(1.1) saturate(1.14)'
+          : 'brightness(1.04) contrast(1.08) saturate(1.12)')
+      : (isEvening
+          ? 'brightness(0.93) contrast(1.02) saturate(0.97)'
+          : 'brightness(0.98) contrast(1.0) saturate(0.95)');
     return {
       overlayAlpha: Math.max(0.1, Math.min(1, baseAlpha * finishBoost * lightingBoost)),
-      blurPx: finish === 'glossy' ? (isEvening ? 1.35 : 1.05) : (isEvening ? 1.1 : 0.85),
-      mediaFilter: isEvening
-        ? 'brightness(0.95) contrast(1.06) saturate(1.08)'
-        : 'brightness(1.01) contrast(1.01) saturate(1.03)',
+      blurPx: finish === 'glossy' ? (isEvening ? 1.65 : 1.35) : (isEvening ? 0.98 : 0.72),
+      mediaFilter,
     };
   }, [lightingMode, finish, lipstickOpacity]);
 
@@ -612,9 +804,11 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
           body: JSON.stringify({
             mode: 'lipstick',
             selected_hex: selectedLipstick.hex,
-            cartridges: selectedLipstick.mix.map((mixItem) => mixItem.cartridgeId),
-            proportions: selectedLipstick.mix.map((mixItem) => mixItem.percentage),
+            cartridges: intensityAdjustedSelectedMix.map((mixItem) => mixItem.cartridgeId),
+            proportions: intensityAdjustedSelectedMix.map((mixItem) => mixItem.percentage),
             quantity_ml: 0.2,
+            requested_intensity: lipstickOpacity,
+            region_context: regionContext,
           }),
         });
         setReservationMessage(`Dispense initiated for ${selectedLipstick.name}.`);
@@ -631,7 +825,9 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
           shade_name: selectedLipstick.name,
           shade_hex: selectedLipstick.hex,
           finish,
-          cartridges: selectedLipstick.mix.map((mixItem) => ({
+          requested_intensity: lipstickOpacity,
+          region_context: regionContext,
+          cartridges: intensityAdjustedSelectedMix.map((mixItem) => ({
             cartridge_id: mixItem.cartridgeId,
             percentage: mixItem.percentage,
           })),
@@ -733,7 +929,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     setDeviceCartLoading(true);
     setDeviceCartMessage('');
     try {
-      const response = await fetch('/api/cart/add', {
+      const response = await apiFetch('/api/cart/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -771,7 +967,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     const cartridgeName = cartridgeNameMap.get(cartridgeId) || cartridgeId;
     setCartLoadingById((previous) => ({ ...previous, [cartridgeId]: true }));
     try {
-      const response = await fetch('/api/cart/add', {
+      const response = await apiFetch('/api/cart/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -783,6 +979,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
           shade_hex: selectedLipstick.hex,
           cartridge_id: cartridgeId,
           cartridge_percentage: percentage,
+          requested_intensity: lipstickOpacity,
           finish,
           experience_type: experienceType,
           launch_mode: launchMode,
@@ -806,7 +1003,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
   const handleAddAllCartridgesToCart = async () => {
     const uniqueMix = Array.from(
-      new Map(selectedLipstick.mix.map((mixItem) => [mixItem.cartridgeId, mixItem])).values(),
+      new Map(intensityAdjustedSelectedMix.map((mixItem) => [mixItem.cartridgeId, mixItem])).values(),
     );
 
     if (uniqueMix.length === 0) {
@@ -820,7 +1017,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     for (const mixItem of uniqueMix) {
       const cartridgeName = cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId;
       try {
-        const response = await fetch('/api/cart/add', {
+        const response = await apiFetch('/api/cart/add', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -832,6 +1029,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             shade_hex: selectedLipstick.hex,
             cartridge_id: mixItem.cartridgeId,
             cartridge_percentage: mixItem.percentage,
+            requested_intensity: lipstickOpacity,
             finish,
             experience_type: experienceType,
             launch_mode: launchMode,
@@ -1034,7 +1232,8 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
           image: imageData,
           lipstick_color: lipstickColor,
           opacity: Math.max(0.1, Math.min(1, (opacity / 100) * (lightingMode === 'evening' ? 1.08 : 0.98))),
-          finish
+          finish,
+          region_context: regionContext,
         })
       });
       if (!response.ok) {
@@ -1145,6 +1344,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
       return;
     }
 
+    setHasCapturedMonogramPortrait(true);
     setCapturedImage(imageData);
     setErrorMessage('');
     setAnalysisReady(false);
@@ -1166,11 +1366,18 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
       selectedOccasion,
       finish,
     );
-    setProposedLipstickShades(occasionProposals);
-    if (occasionProposals[0]) {
-      setSelectedLipstick(occasionProposals[0]);
+    const limitedOccasionProposals = limitCommonLuxuryLipstickShades(
+      occasionProposals,
+      selectedOccasion,
+      recommendationRegion,
+      experienceType === 'store' || launchMode === 'cartridge',
+    );
+    setProposedLipstickShades(limitedOccasionProposals);
+    const occasionDefaultLipstick = pickDefaultLipstickByOccasion(limitedOccasionProposals);
+    if (occasionDefaultLipstick) {
+      setSelectedLipstick(occasionDefaultLipstick);
     }
-    setAnalysisReady(occasionProposals.length > 0);
+    setAnalysisReady(limitedOccasionProposals.length > 0);
     setIsProposalLoading(false);
   };
 
@@ -1181,6 +1388,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     const defaultLipstick = activeLipstickShades[0] || selectedLipstick;
 
     setCapturedImage(null);
+    setHasCapturedMonogramPortrait(false);
     setProcessedImage(null);
     setLipDetected(false);
     setErrorMessage('');
@@ -1212,15 +1420,18 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     // If in-house, send command to device to dispense blend from cartridges
     if (experienceType === 'in-house') {
       try {
+        const intensityAdjustedMix = applyIntensityToMix(lipstick.mix, lipstickOpacity);
         await apiFetch('/device/dispense', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             mode: 'lipstick',
             selected_hex: lipstick.hex,
-            cartridges: lipstick.mix.map((mixItem) => mixItem.cartridgeId),
-            proportions: lipstick.mix.map((mixItem) => mixItem.percentage),
+            cartridges: intensityAdjustedMix.map((mixItem) => mixItem.cartridgeId),
+            proportions: intensityAdjustedMix.map((mixItem) => mixItem.percentage),
             quantity_ml: 0.2, // example quantity
+            requested_intensity: lipstickOpacity,
+            region_context: regionContext,
           }),
         });
       } catch {
@@ -1242,6 +1453,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
   }, [activeLipstickShades]);
 
   const handleClose = () => {
+    setHasCapturedMonogramPortrait(false);
     if (videoRef.current && videoRef.current.srcObject) {
       (videoRef.current.srcObject as MediaStream)
         .getTracks()
@@ -1261,12 +1473,20 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
       selectedOccasion,
       finish,
     );
-    setProposedLipstickShades(occasionProposals);
+    const limitedOccasionProposals = limitCommonLuxuryLipstickShades(
+      occasionProposals,
+      selectedOccasion,
+      recommendationRegion,
+      experienceType === 'store' || launchMode === 'cartridge',
+    );
+    setProposedLipstickShades(limitedOccasionProposals);
     setSelectedLipstick((current) => {
-      const stillPresent = occasionProposals.find((shade) => shade.hex === current.hex);
-      return stillPresent || occasionProposals[0] || current;
+      const occasionDefaultLipstick = pickDefaultLipstickByOccasion(limitedOccasionProposals);
+      if (occasionDefaultLipstick) return occasionDefaultLipstick;
+      const stillPresent = limitedOccasionProposals.find((shade) => shade.hex === current.hex);
+      return stillPresent || limitedOccasionProposals[0] || current;
     });
-  }, [selectedOccasion, finish, capturedImage, analysisReady, lipBackendAnalysis, activeLipstickShades, effectiveSkinTone]);
+  }, [selectedOccasion, finish, capturedImage, analysisReady, lipBackendAnalysis, activeLipstickShades, effectiveSkinTone, experienceType, launchMode, recommendationRegion]);
 
   const isCartridgeSelectionMode = launchMode === 'cartridge';
 
@@ -1276,12 +1496,6 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
         className="relative w-full max-w-6xl mx-auto my-6 rounded-3xl lux-card p-4 sm:p-6 md:p-10 flex flex-col lg:flex-row gap-8 min-h-0"
         style={{ fontFamily: 'serif' }}
       >
-        {isCartridgeSelectionMode && (
-          <div className="absolute top-6 left-6 z-10 rounded-full border border-[#d4af37] bg-[#fffbe6] px-3 py-1 text-xs font-semibold text-[#6d4c1e]">
-            Refill Mode
-          </div>
-        )}
-
         {/* Close Button */}
         <button
           className="absolute top-6 right-6 bg-[#d4af37] text-white rounded-full w-10 h-10 flex items-center justify-center shadow hover:bg-black lux-cta-transition"
@@ -1289,6 +1503,43 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
         >
           ✕
         </button>
+
+        <div className="w-full pr-14 sm:pr-0">
+          <div className="flex flex-col gap-1 sm:gap-2">
+            <div className="inline-flex w-auto items-center gap-2 self-start rounded-full border border-[#bfa77a] bg-white/90 px-3 py-1 text-xs">
+              <span className="font-semibold text-[#6d4c1e]">Live tone:</span>
+              <span className="font-bold text-[#bfa77a] capitalize">{effectiveSkinTone}</span>
+              {isCartridgeSelectionMode && (
+                <span className="rounded-full border border-[#d4af37] bg-[#fffbe6] px-2 py-0.5 font-semibold text-[#6d4c1e]">
+                  Refill Mode
+                </span>
+              )}
+            </div>
+            <div className="inline-flex w-auto items-center gap-2 self-start rounded-full border border-[#d9c6a4] bg-white/90 px-3 py-1 text-xs">
+              <span className="font-semibold text-[#6d4c1e]">Region detected:</span>
+              <span className="font-bold text-[#bfa77a]">{regionDisplayLabel[recommendationRegion]}</span>
+              <span className="text-[#6d4c1e]/70">({regionContext.locale})</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:hidden w-full">
+          <div className="mb-1 flex flex-col sm:flex-row sm:justify-center sm:items-center items-start gap-2">
+            <label htmlFor="occasion-select-mobile" className="sm:mr-2 font-semibold lux-muted">
+              Occasion:
+            </label>
+            <select
+              id="occasion-select-mobile"
+              value={selectedOccasion}
+              onChange={e => setSelectedOccasion(e.target.value)}
+              className="w-full sm:w-auto border border-[#bfa77a] rounded-lg px-4 py-2 bg-white/90 text-[#5b4632] font-medium shadow"
+            >
+              {occasionOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         {/* Left Section - Camera OR Processed Image */}
         <div className="flex-1 flex flex-col items-center">
@@ -1423,7 +1674,8 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             <div className="mt-4 w-full max-w-md mx-auto">
               {experienceType === 'in-house' && (
                 <div className="lux-card rounded-xl p-3 mb-3">
-                  <div className="text-xs font-semibold text-[#6d4c1e] mb-2">In-home lipstick cartridge sets</div>
+                  <div className="text-xs font-semibold text-[#6d4c1e] mb-1">Detected cartridges in device</div>
+                  <div className="text-[11px] text-[#6d4c1e]/70 mb-2">AI detected these 3 loaded cartridges. Switch only if your physical load is different.</div>
                   <div className="flex flex-wrap gap-2">
                     {inhouseLipstickSets.map((set) => (
                       <button
@@ -1452,13 +1704,11 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                 mode="lipstick"
                 targetHex={selectedLipstick.hex}
                 title={
-                  isCartridgeSelectionMode
-                    ? experienceType === 'store'
+                  experienceType === 'in-house'
+                    ? `${activeInhouseSet.label} — 3 cartridges loaded`
+                    : isCartridgeSelectionMode
                       ? 'Cartridge Selection Formula'
-                      : 'Your Cartridge Selection Formula'
-                    : experienceType === 'store'
-                      ? 'Cartridge Formula (Buy)'
-                      : 'Your lipstick formula'
+                      : 'Cartridge Formula (Buy)'
                 }
                 selectedShadeName={selectedLipstick.name}
                 cartridges={activeCartridges}
@@ -1466,7 +1716,11 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   name: shade.name,
                   hex: shade.hex,
                 }))}
-                highlightCartridgeIds={selectedLipstick.mix.map((mixItem) => mixItem.cartridgeId)}
+                highlightCartridgeIds={
+                  experienceType === 'in-house'
+                    ? activeInhouseSet.cartridges.map((c) => c.id)
+                    : selectedLipstick.mix.map((mixItem) => mixItem.cartridgeId)
+                }
                 mixBreakdown={selectedLipstick.mix.map((mixItem) => ({
                   cartridgeId: mixItem.cartridgeId,
                   percentage: mixItem.percentage,
@@ -1480,9 +1734,11 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                 scrollDurationSeconds={36}
               />
               <div className="text-[11px] text-[#6d4c1e]/75 mt-1 text-center px-3">
-                {isCartridgeSelectionMode
-                  ? 'Selection source: this section shows the active 3-cartridge blend mapped to your selected lipstick shade.'
-                  : 'Formula source: this section shows the physical 3-cartridge recipe for the selected lipstick shade.'}
+                {experienceType === 'in-house'
+                  ? 'These 3 cartridges were detected as loaded in your device — the shades above are all blends achievable from them.'
+                  : isCartridgeSelectionMode
+                    ? 'Selection source: this section shows the active 3-cartridge blend mapped to your selected lipstick shade.'
+                    : 'Formula source: this section shows the physical 3-cartridge recipe for the selected lipstick shade.'}
               </div>
 
             </div>
@@ -1517,7 +1773,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
           )}
 
           {/* Opacity Control - Show when image captured */}
-          {capturedImage && (
+          {capturedImage && hasCapturedMonogramPortrait && (
             <div className="mt-4 w-full max-w-md mx-auto">
               <div className="lux-card rounded-xl px-6 py-4">
                 <div className="flex items-center justify-between mb-2">
@@ -1603,15 +1859,19 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
         {/* Right Section - Color Palette & Occasion */}
         <div className="flex-1 flex flex-col items-center">
           <div className="w-full max-w-md mx-auto">
-            <h3 className="lux-title text-2xl mb-6 text-center tracking-[0.2em] uppercase">
-              AI Shade Recommendations
-            </h3>
-            <div className="text-xs text-[#6d4c1e] mb-3 text-center">
-              AI-curated from your captured portrait, skin tone, and selected occasion.
-            </div>
+            {hasCapturedMonogramPortrait && capturedImage && (
+              <>
+                <h3 className="lux-title text-2xl mb-6 text-center tracking-[0.2em] uppercase">
+                  AI Shade Recommendations
+                </h3>
+                <div className="text-xs text-[#6d4c1e] mb-3 text-center">
+                  AI-curated from your captured portrait, skin tone, and selected occasion.
+                </div>
+              </>
+            )}
             
             {/* Occasion & Finish Controls */}
-            <div className="mb-4 flex flex-col sm:flex-row sm:justify-center sm:items-center items-start gap-2">
+            <div className="hidden lg:flex mb-4 flex-col sm:flex-row sm:justify-center sm:items-center items-start gap-2">
               <label htmlFor="occasion-select" className="sm:mr-2 font-semibold lux-muted">
                 Occasion:
               </label>
@@ -1627,20 +1887,24 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
               </select>
             </div>
 
-            <div className="-mt-2 mb-6 grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setFinish('matte')}
-                className={`w-full px-4 py-2 rounded-lg sm:rounded-l-lg sm:rounded-r-none border lux-cta-transition ${finish==='matte' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
-              >
-                Matte
-              </button>
-              <button
-                onClick={() => setFinish('glossy')}
-                className={`w-full px-4 py-2 rounded-lg sm:rounded-r-lg sm:rounded-l-none border lux-cta-transition ${finish==='glossy' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
-              >
-                Glossy
-              </button>
-            </div>
+            {hasCapturedMonogramPortrait && capturedImage && (
+              <>
+                <div className="-mt-2 mb-6 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setFinish('matte')}
+                    className={`w-full px-4 py-2 rounded-lg sm:rounded-l-lg sm:rounded-r-none border lux-cta-transition ${finish==='matte' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
+                  >
+                    Matte
+                  </button>
+                  <button
+                    onClick={() => setFinish('glossy')}
+                    className={`w-full px-4 py-2 rounded-lg sm:rounded-r-lg sm:rounded-l-none border lux-cta-transition ${finish==='glossy' ? 'bg-[#1c1a17] border-[#bfa77a] text-[#f7f2ea]' : 'bg-white border-[#d9c6a4] text-[#7a664a]'}`}
+                  >
+                    Glossy
+                  </button>
+                </div>
+              </>
+            )}
 
             {!capturedImage && (
               <div className="lux-card rounded-xl px-6 py-4 mb-8">
@@ -1673,13 +1937,13 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   <span className="font-semibold text-[#6d4c1e]">AI detected:</span> {effectiveSkinTone} skin tone · {selectedOccasion} occasion · {finish} finish. Shades ranked by undertone harmony and luma proximity.
                 </div>
                 {/* Color Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6 mb-8">
+                <div className="w-full flex flex-wrap justify-center gap-3 sm:gap-4 mb-8">
                   {proposedLipstickShades.map((lipstick) => (
                     <button
                       key={lipstick.name}
                       onClick={() => handleLipstickSelect(lipstick)}
                       disabled={isProcessing}
-                      className={`relative flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] ${
+                      className={`relative w-[108px] sm:w-[116px] flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] ${
                         selectedLipstick.hex === lipstick.hex
                           ? 'border-[#bfa16a] bg-white shadow-lg -translate-y-0.5'
                           : 'border-[#d4af37] bg-white/70 hover:bg-white'
@@ -1709,6 +1973,31 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                     </button>
                   ))}
                 </div>
+
+                <div className="lux-card rounded-xl px-4 py-4 mb-6">
+                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Shade Formula Links</div>
+                  <div className="space-y-2">
+                    {proposedShadeLinks.map((item) => (
+                      <button
+                        key={`shade-link-${item.hex}`}
+                        type="button"
+                        onClick={() => {
+                          const linkedShade = proposedLipstickShades.find((shade) => shade.hex === item.hex);
+                          if (linkedShade) handleLipstickSelect(linkedShade);
+                        }}
+                        disabled={isProcessing}
+                        className="w-full text-left rounded-lg border border-[#d9c6a4] bg-[#fdf6f0] px-3 py-2 hover:bg-white lux-cta-transition disabled:opacity-60"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-semibold text-[#6d4c1e]">{item.name}</span>
+                          <span className="text-[10px] font-semibold text-[#bfa77a] uppercase tracking-wide">{item.rank}</span>
+                        </div>
+                        <div className="text-[11px] text-[#6d4c1e]/85 mt-1">{item.formulaText}</div>
+                        <div className="text-[11px] text-[#6d4c1e]/70 mt-1">Optimized for {selectedOccasion} · {finish} finish</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
 
@@ -1729,7 +2018,13 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
                 {/* Checkout Assistant */}
                 <div className="lux-card rounded-xl px-6 py-4 mt-4">
-                  <div className="font-bold text-base text-[#6d4c1e] mb-2">Checkout Assistant</div>
+                  {experienceType === 'in-house' ? (
+                    <div className="font-bold text-base text-[#6d4c1e] mb-2">Dispense This Curated Shade</div>
+                  ) : (
+                    <div className="font-bold text-base text-[#6d4c1e] mb-2">Checkout Assistant</div>
+                  )}
+                  {experienceType !== 'in-house' && (
+                  <>
                   <button
                     type="button"
                     onClick={handleAddAllCartridgesToCart}
@@ -1752,27 +2047,27 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                       Reset added items
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={handleReserveFormula}
-                    className="main-action-btn w-full"
-                    disabled={reservationLoading}
-                  >
-                    {reservationLoading
-                      ? experienceType === 'in-house'
-                        ? 'Dispensing Selected Shade...'
-                        : 'Reserving Formula...'
-                      : experienceType === 'in-house'
-                        ? 'Dispense Selected Shade'
-                        : 'Reserve this Formula'}
-                  </button>
-                  {reservationMessage && (
-                    <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
-                      {reservationReference && (
-                        <div className="font-semibold text-[#bfa77a] mb-1">Ref: {reservationReference}</div>
+                  </>
+                  )}
+                  {experienceType === 'in-house' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleReserveFormula}
+                        className="main-action-btn w-full"
+                        disabled={reservationLoading}
+                      >
+                        {reservationLoading ? 'Dispensing Selected Shade...' : 'Dispense Selected Shade'}
+                      </button>
+                      {reservationMessage && (
+                        <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
+                          {reservationReference && (
+                            <div className="font-semibold text-[#bfa77a] mb-1">Ref: {reservationReference}</div>
+                          )}
+                          {reservationMessage}
+                        </div>
                       )}
-                      {reservationMessage}
-                    </div>
+                    </>
                   )}
                   {experienceType !== 'in-house' && (
                     <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
@@ -1811,6 +2106,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                       </div>
                     </div>
                   )}
+                  {experienceType !== 'in-house' && (
                   <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
                     <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Cartridge Refill Plan</div>
                     <div className="space-y-1 text-xs text-[#6d4c1e]">
@@ -1836,6 +2132,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                       ))}
                     </div>
                   </div>
+                  )}
                 </div>
 
                 {/* Luxury Brand Suggestions */}
@@ -1845,7 +2142,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   </div>
                   <ul className="lux-muted text-sm leading-relaxed ml-4">
                     {(luxurySuggestions[effectiveSkinTone][selectedOccasion] || luxurySuggestions[effectiveSkinTone]['office']).map((suggestion) => (
-                      <li key={suggestion}>• {suggestion}</li>
+                      <li key={suggestion}>• {normalizeShadeName(suggestion)}</li>
                     ))}
                   </ul>
                 </div>
