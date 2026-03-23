@@ -1,27 +1,27 @@
-// ...existing code...
-import { Brain, Palette, Sparkles, Shield } from 'lucide-react';
+import React from 'react';
+import { Scan, Layers, Sparkles, Sliders } from 'lucide-react';
 
 const FeatureCards: React.FC = () => {
   const features = [
     {
-      icon: Brain,
-      title: "AI-Powered Analysis",
-      description: "Advanced machine learning analyzes 200+ skin parameters for precision matching"
+      icon: Scan,
+      title: "AI-Powered Skin Analysis",
+      description: "Instantly detect your unique skin tone and undertone for a truly personalized foundation match."
     },
     {
-      icon: Palette,
-      title: "Custom Formulation",
-      description: "Real-time foundation blending with personalized anti-aging compounds"
+      icon: Layers,
+      title: "Virtual Foundation Try-On",
+      description: "See how each foundation shade looks on your face in real time — no testers needed."
     },
     {
       icon: Sparkles,
-      title: "Multi-Light Testing",
-      description: "Perfect coverage analysis across different lighting environments"
+      title: "Lipstick Try-On",
+      description: "Explore our curated lip colour palette with live AR overlay tailored to your complexion."
     },
     {
-      icon: Shield,
-      title: "Skincare Integration",
-      description: "Anti-aging benefits built into every custom foundation formula"
+      icon: Sliders,
+      title: "Custom Formulation",
+      description: "Your skin data drives a bespoke formula blended with targeted skincare actives."
     }
   ];
 
@@ -30,12 +30,12 @@ const FeatureCards: React.FC = () => {
       {features.map((feature, index) => (
         <div
           key={index}
-          className="group lux-card rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:shadow-2xl transition-all duration-300"
+          className="group lux-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col items-center text-center hover:shadow-2xl transition-all duration-300"
         >
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#1c1a17] rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform border border-[#bfa77a]">
-            <feature.icon className="w-6 h-6 sm:w-8 sm:h-8 text-[#f7f2ea]" />
+          <div className="mb-4 sm:mb-5 text-[#bfa77a] group-hover:scale-110 transition-transform">
+            <feature.icon className="w-8 h-8 sm:w-10 sm:h-10" strokeWidth={1.5} />
           </div>
-          <h4 className="font-semibold lux-title mb-2 sm:mb-3 text-sm sm:text-base">{feature.title}</h4>
+          <h4 className="font-bold lux-title mb-2 sm:mb-3 text-sm sm:text-base tracking-wide">{feature.title}</h4>
           <p className="lux-muted text-xs sm:text-sm leading-relaxed">{feature.description}</p>
         </div>
       ))}
