@@ -441,24 +441,6 @@ const colorPalettes: Record<string, Lipstick[]> = {
 };
 
 
-const luxurySuggestions: Record<string, Record<string, string[]>> = {
-  fair: {
-    casual: ['LV Nude Lavalliere', 'LV Urban Beige', 'LV Rose Adrienne'],
-    party: ['LV Cherry Lush', 'LV Goldie Red', 'LV Rouge 999'],
-    office: ['LV Sand Veil', 'LV Pensive Plum', 'LV Beige Tribute'],
-  },
-  medium: {
-    casual: ['LV Be Dior', 'LV Corail Shine', 'LV Blaze of Noon'],
-    party: ['LV Scarlet Rouge', 'LV Pirate Rouge', 'LV Red Smile'],
-    office: ['LV Sultan Rose', 'LV Rose Stiletto', 'LV Mildred Rosewood'],
-  },
-  deep: {
-    casual: ['LV Argentina Rose', 'LV Jean Cocoa', 'LV Black Tie'],
-    party: ['LV Velvet Cherry', 'LV Le Rouge', 'LV Ambitious Rouge'],
-    office: ['LV Drama Matte', 'LV Janet Rust', 'LV Rouge Noir'],
-  },
-};
-
 // Expanded lipstick shades for all events and popular colors
 // const lipstickShades = [
 //   { name: "Classic Red", hex: "#C72C48" },
@@ -2015,7 +1997,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             {capturedImage && isProposalLoading && (
               <div className="lux-card rounded-xl px-6 py-4 mb-8 flex items-center gap-2 text-[#6d4c1e]">
                 <div className="w-5 h-5 border-2 border-[#bfa77a] border-t-transparent rounded-full animate-spin"></div>
-                Preparing your personalized lip recommendations...
+                Preparing your lip shade recommendations...
               </div>
             )}
 
@@ -2232,17 +2214,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   )}
                 </div>
 
-                {/* Luxury Brand Suggestions */}
-                <div className="lux-card rounded-2xl p-6">
-                  <div className="font-semibold lux-title text-lg mb-4">
-                    Premium Shade Suggestions
-                  </div>
-                  <ul className="lux-muted text-sm leading-relaxed ml-4">
-                    {(luxurySuggestions[effectiveSkinTone][selectedOccasion] || luxurySuggestions[effectiveSkinTone]['office']).map((suggestion) => (
-                      <li key={suggestion}>• {normalizeShadeName(suggestion)}</li>
-                    ))}
-                  </ul>
-                </div>
+                {/* Luxury Brand Suggestions — hidden for now */}
 
                 {/* Tips */}
                 <div className="mt-6 lux-card rounded-xl p-4">
