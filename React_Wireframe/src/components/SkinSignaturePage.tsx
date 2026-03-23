@@ -238,6 +238,12 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
   };
 
   useEffect(() => {
+    const openCartFromHeaderEvent = () => setIsCartOpen(true);
+    window.addEventListener('ss-open-cart', openCartFromHeaderEvent as EventListener);
+    return () => window.removeEventListener('ss-open-cart', openCartFromHeaderEvent as EventListener);
+  }, []);
+
+  useEffect(() => {
     if (currentView !== 'home') return;
     warmupBackend();
   }, [currentView, warmupBackend]);

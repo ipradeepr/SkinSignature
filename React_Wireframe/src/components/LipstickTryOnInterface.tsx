@@ -2029,7 +2029,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
               <div className="lux-card rounded-xl px-6 py-4 mb-8">
                 <div className="font-bold text-base text-[#6d4c1e] mb-1">Personalized Shade Recommendations</div>
                 <div className="text-sm text-[#6d4c1e]/80">
-                  Capture a Monogram Portrait to unlock AI-curated, occasion-aware lipstick recommendations.
+                  Capture a Monogram Portrait to unlock AI-curated, occasion-aware lip shade recommendations.
                 </div>
               </div>
             )}
@@ -2037,7 +2037,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
             {capturedImage && isProposalLoading && (
               <div className="lux-card rounded-xl px-6 py-4 mb-8 flex items-center gap-2 text-[#6d4c1e]">
                 <div className="w-5 h-5 border-2 border-[#bfa77a] border-t-transparent rounded-full animate-spin"></div>
-                Preparing your lip shade recommendations...
+                Preparing your personalized lip shade recommendations...
               </div>
             )}
 

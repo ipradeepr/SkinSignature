@@ -10,6 +10,12 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ cartItems, onHomeClick, onCartClick }) => {
   const { status: backend, isChecking, checkStatus } = useBackendStatus();
+  const handleCartButtonClick = () => {
+    onCartClick?.();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ss-open-cart'));
+    }
+  };
 
   return (
     <header className="lux-header sticky top-0 z-40">
@@ -38,9 +44,10 @@ const Header: React.FC<HeaderProps> = ({ cartItems, onHomeClick, onCartClick }) 
             <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-[#bfa77a] hover:text-[#f7f2ea] cursor-pointer lux-link-transition" />
             <button
               type="button"
-              onClick={onCartClick}
+              onClick={handleCartButtonClick}
               className="relative p-1 rounded-full hover:bg-[#e8dcc8] lux-cta-transition"
               aria-label="Open cart"
+              title="Open cart"
             >
               <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 text-[#bfa77a]" strokeWidth={1.5} />
               {cartItems > 0 && (
