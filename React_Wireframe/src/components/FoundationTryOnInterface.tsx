@@ -694,7 +694,11 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    ctx.save();
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
     const imageData = canvas.toDataURL('image/jpeg');
     setHasCapturedMonogramPortrait(true);
     setCapturedImage(imageData);
@@ -1713,13 +1717,13 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                       muted
                       playsInline
                       className="w-full h-full object-cover"
-                      style={{ transform: `translateZ(0) scale(${zoom})`, transformOrigin: 'center center', backfaceVisibility: 'hidden', filter: finishLightingProfile.mediaFilter, transition: 'filter 420ms cubic-bezier(0.22,1,0.36,1)' }}
+                      style={{ transform: `translateZ(0) scale(${zoom}) scaleX(-1)`, transformOrigin: 'center center', backfaceVisibility: 'hidden', filter: finishLightingProfile.mediaFilter, transition: 'filter 420ms cubic-bezier(0.22,1,0.36,1)' }}
                     />
                     {/* Live foundation overlay canvas */}
                     <canvas
                       ref={liveOverlayCanvasRef}
                       className="absolute inset-0 w-full h-full"
-                      style={{ pointerEvents: 'none', borderRadius: '0.75rem' }}
+                      style={{ pointerEvents: 'none', borderRadius: '0.75rem', transform: 'scaleX(-1)' }}
                     />
                   </div>
                   {/* Hidden canvas for snapshot */}

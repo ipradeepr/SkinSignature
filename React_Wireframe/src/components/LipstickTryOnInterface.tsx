@@ -1419,7 +1419,11 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    ctx.save();
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
     ctx.drawImage(video, sx, sy, srcW, srcH, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
     const imageData = canvas.toDataURL('image/jpeg');
 
     if (!imageData || imageData === 'data:,') {
@@ -1690,13 +1694,13 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   muted
                   playsInline
                   className="object-cover"
-                  style={{ transform: `translateZ(0) scale(${zoom})`, transformOrigin: 'center center', width: '100%', height: '100%', backfaceVisibility: 'hidden', filter: finishLightingProfile.mediaFilter, transition: 'filter 420ms cubic-bezier(0.22,1,0.36,1)' }}
+                  style={{ transform: `translateZ(0) scale(${zoom}) scaleX(-1)`, transformOrigin: 'center center', width: '100%', height: '100%', backfaceVisibility: 'hidden', filter: finishLightingProfile.mediaFilter, transition: 'filter 420ms cubic-bezier(0.22,1,0.36,1)' }}
                 />
                 {/* Live lipstick overlay canvas */}
                 <canvas
                   ref={liveLipCanvasRef}
                   className="absolute inset-0 w-full h-full"
-                  style={{ pointerEvents: 'none', borderRadius: '0.75rem' }}
+                  style={{ pointerEvents: 'none', borderRadius: '0.75rem', transform: 'scaleX(-1)' }}
                 />
                 </div>
                 <canvas ref={canvasRef} className="hidden" />

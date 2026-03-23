@@ -10,6 +10,87 @@ interface CartDrawerProps {
   onClear: () => void;
 }
 
+const cartridgeColorById: Record<string, string> = {
+  F1: '#F2D6C9',
+  F2: '#E6BFAE',
+  F3: '#D7B08F',
+  F4: '#C89B78',
+  F5: '#B88763',
+  F6: '#9C6B52',
+  F7: '#7C5C3E',
+  F8: '#5B3A29',
+  A1: '#D6B28E',
+  A2: '#B88B67',
+  A3: '#8E5D43',
+  B1: '#D9BF9F',
+  B2: '#A97B59',
+  B3: '#6C4633',
+  L1: '#D2A679',
+  L2: '#B76E79',
+  L3: '#FF7F50',
+  L4: '#C72C48',
+  L5: '#7B294E',
+  L6: '#E43F6F',
+  L7: '#8B3A3A',
+  L8: '#4B244A',
+  LA: '#D2A679',
+  LB: '#C48793',
+  LC: '#7B294E',
+  LD: '#FF7F50',
+  LE: '#C72C48',
+  LF: '#8B3A3A',
+};
+
+const cartridgeNameById: Record<string, string> = {
+  F1: 'Porcelain Base',
+  F2: 'Ivory Base',
+  F3: 'Warm Beige',
+  F4: 'Honey Beige',
+  F5: 'Caramel',
+  F6: 'Tan Blend',
+  F7: 'Mocha Blend',
+  F8: 'Deep Neutral',
+  A1: 'Warm Sand',
+  A2: 'Golden Beige',
+  A3: 'Rich Amber',
+  B1: 'Neutral Linen',
+  B2: 'Soft Tan',
+  B3: 'Deep Mocha',
+  L1: 'Rose Nude',
+  L2: 'Dusty Pink',
+  L3: 'Coral Pop',
+  L4: 'Classic Red',
+  L5: 'Berry Plum',
+  L6: 'Fuchsia Boost',
+  L7: 'Brick Tone',
+  L8: 'Deep Wine',
+  LA: 'Nude Base',
+  LB: 'Rose Core',
+  LC: 'Deep Plum',
+  LD: 'Coral Base',
+  LE: 'True Red',
+  LF: 'Brick Depth',
+};
+
+function swatchColorForItem(item: CartItem): string | undefined {
+  if (item.cartridge_id && cartridgeColorById[item.cartridge_id]) {
+    return cartridgeColorById[item.cartridge_id];
+  }
+  return item.shade_hex;
+}
+
+function swatchTitleForItem(item: CartItem): string {
+  const parts: string[] = [];
+  if (item.shade_name) {
+    parts.push(`Shade: ${item.shade_name}`);
+  }
+  if (item.cartridge_id) {
+    const cartridgeName = cartridgeNameById[item.cartridge_id];
+    parts.push(cartridgeName ? `Cartridge: ${item.cartridge_id} · ${cartridgeName}` : `Cartridge: ${item.cartridge_id}`);
+  }
+  return parts.join(' • ');
+}
+
 function categoryLabel(item: CartItem): string {
   if (item.category === 'device') return 'Device';
   if (item.product_type === 'lipstick') return 'Lip Cartridge';
@@ -22,8 +103,15 @@ function categoryBadgeClass(item: CartItem): string {
   return 'bg-amber-50 text-amber-800';
 }
 
+function displayTitleForItem(item: CartItem): string {
+  if (item.category === 'device') return item.product_name;
+  if (item.cartridge_id && cartridgeNameById[item.cartridge_id]) {
+    return `${cartridgeNameById[item.cartridge_id]} Cartridge`;
+  }
+  return item.product_name;
+}
+
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, items, onClose, onRemove, onClear }) => {
-  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   return (
     <>
@@ -79,11 +167,11 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, items, onClose, onRemov
                 className="flex items-start gap-3 p-3 rounded-xl bg-white/80 border border-[#e8dcc8] group"
               >
                 {/* Shade swatch or icon */}
-                {item.shade_hex ? (
+                {swatchColorForItem(item) ? (
                   <div
                     className="w-10 h-10 rounded-lg flex-shrink-0 border border-[#d4af37]/30 shadow-sm"
-                    style={{ backgroundColor: item.shade_hex }}
-                    title={item.shade_name}
+                    style={{ backgroundColor: swatchColorForItem(item) }}
+                    title={swatchTitleForItem(item)}
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-lg flex-shrink-0 bg-[#1c1a17] border border-[#bfa77a]/40 flex items-center justify-center">
@@ -94,13 +182,19 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, items, onClose, onRemov
                 {/* Details */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold lux-title text-sm truncate">{item.product_name}</span>
+                    <span className="font-semibold lux-title text-sm truncate">{displayTitleForItem(item)}</span>
                     <span className={`text-[0.6rem] px-1.5 py-0.5 rounded-full font-semibold ${categoryBadgeClass(item)}`}>
                       {categoryLabel(item)}
                     </span>
                   </div>
                   {item.shade_name && (
                     <p className="text-xs lux-muted mt-0.5">Shade: {item.shade_name}</p>
+                  )}
+                  {item.cartridge_id && (
+                    <p className="text-xs lux-muted">
+                      Cartridge: {item.cartridge_id}
+                      {cartridgeNameById[item.cartridge_id] ? ` · ${cartridgeNameById[item.cartridge_id]}` : ''}
+                    </p>
                   )}
                   {item.cartridge_percentage !== undefined && (
                     <p className="text-xs lux-muted">Mix: {item.cartridge_percentage}%</p>
@@ -110,9 +204,6 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, items, onClose, onRemov
                   )}
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs lux-muted">Qty {item.quantity}</span>
-                    <span className="text-xs font-semibold lux-title">
-                      {item.price > 0 ? `£${item.price.toFixed(2)}` : 'Complimentary'}
-                    </span>
                   </div>
                 </div>
 
@@ -133,12 +224,6 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, items, onClose, onRemov
         {/* Footer */}
         {items.length > 0 && (
           <div className="px-5 py-4 border-t border-[#e8dcc8] space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="lux-muted text-sm">Estimated Total</span>
-              <span className="font-bold lux-title text-base">
-                {total > 0 ? `£${total.toFixed(2)}` : 'Complimentary'}
-              </span>
-            </div>
             <button
               type="button"
               className="w-full py-3 px-4 rounded-xl bg-[#1c1a17] text-[#f7f2ea] text-sm font-semibold tracking-wide hover:bg-[#bfa77a] hover:text-[#1c1a17] lux-cta-transition"
