@@ -8,6 +8,8 @@ import ProductDetails from './ProductDetails';
 import Header from './Header';
 import FoundationTryOnInterface from './FoundationTryOnInterface';
 import LipstickTryOnInterface from './LipstickTryOnInterface';
+import CartDrawer from './CartDrawer';
+import { useCart } from '../hooks/useCart';
 import { apiFetch } from '../config/api';
 
 type FoundationSwatch = {
@@ -97,6 +99,8 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
   const [selectedOccasion] = useState('office');
   const [isApplyingFoundation, setIsApplyingFoundation] = useState(false);
   const [realTimeData, setRealTimeData] = useState<any>(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { items: cartItems, cartCount, addItem, removeItem, clearCart } = useCart();
 
   // --- Lipstick Try-On State ---
   const [lipstickMode, setLipstickMode] = useState(false);
@@ -227,6 +231,10 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
     setLipstickMode(false);
     setCurrentView('home');
     onNavigateHome?.();
+  };
+
+  const handleCartClick = () => {
+    setIsCartOpen(true);
   };
 
   useEffect(() => {
@@ -537,7 +545,7 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
     <div className="min-h-screen lux-page flex flex-col items-center py-6 overflow-x-hidden">
       {/* --- Full-width Header --- */}
       <div className="w-full max-w-none">
-        <Header cartItems={0} onHomeClick={handleHeaderHomeClick} />
+        <Header cartItems={cartCount} onHomeClick={handleHeaderHomeClick} onCartClick={handleCartClick} />
       </div>
       {/* --- Home View --- */}
       {currentView === 'home' && (
@@ -683,6 +691,8 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
           launchMode={launchMode}
           skintone={inferredSkinTone}
           toneConfidence={liveToneConfidence}
+          onCartUpdate={addItem}
+          onOpenCart={handleCartClick}
         />
       )}
 
@@ -696,7 +706,14 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
               <span className="text-[#6d4c1e]/70">({liveToneConfidence}%)</span>
             )}
           </div>
-          <LipstickTryOnInterface onClose={handleCloseCamera} experienceType={experienceType} launchMode={launchMode} skintone={inferredSkinTone} />
+          <LipstickTryOnInterface
+            onClose={handleCloseCamera}
+            experienceType={experienceType}
+            launchMode={launchMode}
+            skintone={inferredSkinTone}
+            onCartUpdate={addItem}
+            onOpenCart={handleCartClick}
+          />
           {/* Lipstick overlay canvas for accurate application */}
           {(lipstickMode && videoRef.current && videoRef.current.videoWidth && videoRef.current.videoHeight) ? (
             <canvas
@@ -783,11 +800,16 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
           </div>
         </div>
       )}
+
+      <CartDrawer
+        isOpen={isCartOpen}
+        items={cartItems}
+        onClose={() => setIsCartOpen(false)}
+        onRemove={removeItem}
+        onClear={clearCart}
+      />
     </div>
   );
 };
 
 export default SkinSignaturePage;
-
-// All foundation features are present and rendered in the correct layout.
-// No features have been removed.

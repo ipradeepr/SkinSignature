@@ -1,13 +1,14 @@
-// ...existing code...
-import { Heart } from 'lucide-react';
+import React from 'react';
+import { Heart, ShoppingBag } from 'lucide-react';
 import { useBackendStatus } from '../hooks/useBackendStatus';
 
 interface HeaderProps {
   cartItems: number;
   onHomeClick?: () => void;
+  onCartClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ cartItems, onHomeClick }) => {
+const Header: React.FC<HeaderProps> = ({ cartItems, onHomeClick, onCartClick }) => {
   const { status: backend, isChecking, checkStatus } = useBackendStatus();
 
   return (
@@ -35,14 +36,19 @@ const Header: React.FC<HeaderProps> = ({ cartItems, onHomeClick }) => {
           </nav>
           <div className="flex items-center gap-3 sm:gap-4 ml-auto">
             <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-[#bfa77a] hover:text-[#f7f2ea] cursor-pointer lux-link-transition" />
-            <div className="relative">
-              <div className="w-5 h-5 sm:w-6 sm:h-6 text-[#bfa77a] cursor-pointer">🛒</div>
+            <button
+              type="button"
+              onClick={onCartClick}
+              className="relative p-1 rounded-full hover:bg-[#e8dcc8] lux-cta-transition"
+              aria-label="Open cart"
+            >
+              <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 text-[#bfa77a]" strokeWidth={1.5} />
               {cartItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#bfa77a] text-[#1c1a17] text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
-                  {cartItems}
+                <span className="absolute -top-1 -right-1 bg-[#bfa77a] text-[#1c1a17] text-[0.6rem] font-bold rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
+                  {cartItems > 9 ? '9+' : cartItems}
                 </span>
               )}
-            </div>
+            </button>
             <div className="ml-2 flex items-center">
               <button
                 type="button"

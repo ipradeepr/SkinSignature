@@ -3,6 +3,7 @@ import { apiFetch, parseApiError } from "../config/api";
 import FoundationSwatchPanel from './FoundationSwatchPanel';
 import CartridgeMarquee, { type Cartridge } from './CartridgeMarquee';
 import skinSignatureDeviceImage from '../assets/SkinSignature.png';
+import type { CartItem } from '../hooks/useCart';
 
 type ShadeMix = {
   cartridgeId: string;
@@ -355,9 +356,11 @@ interface FoundationTryOnInterfaceProps {
   skintone?: SkinToneProfile;
   toneConfidence?: number;
   launchMode?: 'store' | 'cartridge' | 'in-house';
+  onCartUpdate?: (item: Omit<CartItem, 'uid' | 'addedAt'>) => void;
+  onOpenCart?: () => void;
 }
 
-const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, experienceType = 'store', skintone = 'medium', toneConfidence = 0, launchMode = 'store' }) => {
+const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, experienceType = 'store', skintone = 'medium', toneConfidence = 0, launchMode = 'store', onCartUpdate, onOpenCart }) => {
   const [selectedInhouseSetId, setSelectedInhouseSetId] = useState<'set-a' | 'set-b'>('set-a');
   const [selectedOccasion, setSelectedOccasion] = useState(occasionOptions[0].value);
   const recommendationRegion = useMemo<RegionKey>(() => detectRegionFromLocale(), []);
@@ -1435,6 +1438,14 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
           // ignore storage quota/privacy errors
         }
       }
+      onCartUpdate?.({
+        product_id: 'SS2025-DEVICE',
+        product_name: 'Skin Signature Device',
+        category: 'device',
+        product_type: 'skin-device',
+        quantity: 1,
+        price: 2499.0,
+      });
       setDeviceCartMessage('Skin Signature Device added to cart.');
     } catch {
       setDeviceCartMessage('Could not add device right now. Please try again.');
@@ -1472,6 +1483,19 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
       }
 
       setAddedCartridgeIds((previous) => ({ ...previous, [cartridgeId]: true }));
+      onCartUpdate?.({
+        product_id: `CRT-${cartridgeId}`,
+        product_name: `${cartridgeName} Cartridge`,
+        category: 'cartridge',
+        product_type: 'foundation',
+        shade_name: selectedShade.name,
+        shade_hex: selectedShade.hex,
+        cartridge_id: cartridgeId,
+        cartridge_percentage: percentage,
+        finish,
+        quantity: 1,
+        price: 0,
+      });
       setCartMessage(`${cartridgeName} added to cart.`);
     } catch {
       setCartMessage(`Unable to add ${cartridgeName} right now.`);
@@ -1531,6 +1555,22 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
           next[mixItem.cartridgeId] = true;
         });
         return next;
+      });
+      uniqueMix.forEach((mixItem) => {
+        const cartridgeName = cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId;
+        onCartUpdate?.({
+          product_id: `CRT-${mixItem.cartridgeId}`,
+          product_name: `${cartridgeName} Cartridge`,
+          category: 'cartridge',
+          product_type: 'foundation',
+          shade_name: selectedShade.name,
+          shade_hex: selectedShade.hex,
+          cartridge_id: mixItem.cartridgeId,
+          cartridge_percentage: mixItem.percentage,
+          finish,
+          quantity: 1,
+          price: 0,
+        });
       });
       setCartMessage(`All ${successCount} cartridges added to cart.`);
     } else if (successCount > 0) {
@@ -2044,7 +2084,16 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                 </button>
                 {cartMessage && (
                   <div className="mb-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
-                    {cartMessage}
+                    <div>{cartMessage}</div>
+                    {onOpenCart && cartMessage.toLowerCase().includes('added to cart') && (
+                      <button
+                        type="button"
+                        onClick={onOpenCart}
+                        className="mt-1 text-[11px] font-semibold text-[#6d4c1e] underline underline-offset-2 hover:text-[#bfa77a] lux-cta-transition"
+                      >
+                        View Cart
+                      </button>
+                    )}
                   </div>
                 )}
                 {hasAddedCartridges && (
@@ -2110,7 +2159,16 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                       </button>
                       {deviceCartMessage && (
                         <div className="mt-2 text-xs text-[#6d4c1e] bg-[#fdf6f0] border border-[#d9c6a4] rounded-lg px-3 py-2">
-                          {deviceCartMessage}
+                          <div>{deviceCartMessage}</div>
+                          {onOpenCart && deviceCartMessage.toLowerCase().includes('added to cart') && (
+                            <button
+                              type="button"
+                              onClick={onOpenCart}
+                              className="mt-1 text-[11px] font-semibold text-[#6d4c1e] underline underline-offset-2 hover:text-[#bfa77a] lux-cta-transition"
+                            >
+                              View Cart
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
