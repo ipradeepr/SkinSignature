@@ -354,10 +354,63 @@ function applyIntensityToPercentage(basePercentage: number, opacity: number): nu
   return Math.max(0, Math.round((basePercentage * normalizedOpacity) / 100));
 }
 
-function applyIntensityToMix(mix: ShadeMix[], opacity: number): ShadeMix[] {
-  return mix.map((mixItem) => ({
+function pickDominantDarkRedIndex(mix: ShadeMix[], cartridgeHexMap?: Map<string, string>): number {
+  if (mix.length === 0) return 0;
+
+  let dominantIndex = 0;
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  mix.forEach((mixItem, index) => {
+    const cartridgeHex = cartridgeHexMap?.get(mixItem.cartridgeId);
+    if (!cartridgeHex) {
+      if (mixItem.percentage > bestScore) {
+        bestScore = mixItem.percentage;
+        dominantIndex = index;
+      }
+      return;
+    }
+
+    const rgb = hexToRgb(cartridgeHex);
+    const redLead = Math.max(0, rgb.r - (rgb.g + rgb.b) / 2);
+    const luma = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+    const darkness = 255 - luma;
+    const score = redLead * 0.7 + darkness * 0.3;
+
+    if (score > bestScore) {
+      bestScore = score;
+      dominantIndex = index;
+    }
+  });
+
+  return dominantIndex;
+}
+
+function applyIntensityToMix(mix: ShadeMix[], opacity: number, cartridgeHexMap?: Map<string, string>): ShadeMix[] {
+  if (mix.length === 0) return [];
+  const normalizedOpacity = Math.max(0, Math.min(100, opacity));
+  if (normalizedOpacity === 0) {
+    return mix.map((mixItem) => ({
+      cartridgeId: mixItem.cartridgeId,
+      percentage: 0,
+    }));
+  }
+
+  const scaled = mix.map((mixItem) => applyIntensityToPercentage(mixItem.percentage, normalizedOpacity));
+  const dominantIndex = pickDominantDarkRedIndex(mix, cartridgeHexMap);
+  const intensityShift = Math.max(-1, Math.min(1, (normalizedOpacity - 70) / 30));
+
+  const adjusted = scaled.map((value, index) => {
+    const factor = index === dominantIndex
+      ? 1 + intensityShift * 0.35
+      : 1 - intensityShift * 0.18;
+    return Math.max(0, Math.round(value * factor));
+  });
+
+  const normalized = normalizePercentages(adjusted);
+
+  return mix.map((mixItem, index) => ({
     cartridgeId: mixItem.cartridgeId,
-    percentage: applyIntensityToPercentage(mixItem.percentage, opacity),
+    percentage: normalized[index],
   }));
 }
 
@@ -489,7 +542,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     casual: [
       { name: 'MLBB Nude', hex: '#C9A18E', color: 'rgb(201,161,142)' },
       { name: 'Soft Rose', hex: '#B8737B', color: 'rgb(184,115,123)' },
-      { name: 'Warm Coral', hex: '#E06D5E', color: 'rgb(224,109,94)' },
+      { name: 'Cherry Red', hex: '#C0392B', color: 'rgb(192,57,43)' },
       { name: 'Brick Red', hex: '#9E2B25', color: 'rgb(158,43,37)' },
       { name: 'Berry Matte', hex: '#7A2E52', color: 'rgb(122,46,82)' },
       { name: 'Cocoa Brown', hex: '#6B3A2E', color: 'rgb(107,58,46)' },
@@ -498,13 +551,13 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
       { name: 'Velvet Red', hex: '#B0002A', color: 'rgb(176,0,42)' },
       { name: 'Deep Plum', hex: '#4B1F3A', color: 'rgb(75,31,58)' },
       { name: 'Hot Fuchsia', hex: '#D81B60', color: 'rgb(216,27,96)' },
-      { name: 'Terracotta', hex: '#B55239', color: 'rgb(181,82,57)' },
+      { name: 'Oxblood', hex: '#800020', color: 'rgb(128,0,32)' },
       { name: 'Wine', hex: '#5A1832', color: 'rgb(90,24,50)' },
-      { name: 'Burnt Orange', hex: '#C44E2B', color: 'rgb(196,78,43)' },
+      { name: 'Dark Ruby', hex: '#9B1B30', color: 'rgb(155,27,48)' },
     ],
     office: [
       { name: 'Nude Beige', hex: '#D2A679', color: 'rgb(210,166,121)' },
-      { name: 'Dusty Rose', hex: '#C48793', color: 'rgb(196,135,147)' },
+      { name: 'Soft Rose Red', hex: '#C46A73', color: 'rgb(196,106,115)' },
       { name: 'Mauve', hex: '#9E6B84', color: 'rgb(158,107,132)' },
       { name: 'Rosewood', hex: '#8B5C5E', color: 'rgb(139,92,94)' },
       { name: 'Soft Brown', hex: '#8B5C2B', color: 'rgb(139,92,43)' },
@@ -537,28 +590,28 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
   };
   const glossyPalettes: Record<string, Lipstick[]> = {
     casual: [
-      { name: 'Sheer Pink', hex: '#F7B2B7', color: 'rgb(247,178,183)' },
-      { name: 'Glassy Coral', hex: '#FF8C69', color: 'rgb(255,140,105)' },
-      { name: 'Peach Shine', hex: '#FFC2A1', color: 'rgb(255,194,161)' },
-      { name: 'Rose Gloss', hex: '#E8A7B3', color: 'rgb(232,167,179)' },
-      { name: 'Berry Shine', hex: '#B35C82', color: 'rgb(179,92,130)' },
-      { name: 'Caramel Glow', hex: '#D3A17A', color: 'rgb(211,161,122)' },
+      { name: 'Dark Cherry', hex: '#8B0000', color: 'rgb(139,0,0)' },
+      { name: 'Crimson Gloss', hex: '#A50021', color: 'rgb(165,0,33)' },
+      { name: 'Plum Lacquer', hex: '#5C1A44', color: 'rgb(92,26,68)' },
+      { name: 'Garnet Shine', hex: '#85182A', color: 'rgb(133,24,42)' },
+      { name: 'Deep Burgundy', hex: '#6D0F2A', color: 'rgb(109,15,42)' },
+      { name: 'Oxblood Gloss', hex: '#800020', color: 'rgb(128,0,32)' },
     ],
     party: [
-      { name: 'Lacquer Red', hex: '#E03C31', color: 'rgb(224,60,49)' },
-      { name: 'Candy Fuchsia', hex: '#FF3E8B', color: 'rgb(255,62,139)' },
-      { name: 'Ruby Gloss', hex: '#C72C48', color: 'rgb(199,44,72)' },
-      { name: 'Berry Pop', hex: '#9B2F58', color: 'rgb(155,47,88)' },
-      { name: 'Cherry Shine', hex: '#D12B3D', color: 'rgb(209,43,61)' },
-      { name: 'Tangerine', hex: '#FF6B35', color: 'rgb(255,107,53)' },
+      { name: 'Vamp Gloss', hex: '#3A0D1E', color: 'rgb(58,13,30)' },
+      { name: 'Deep Merlot', hex: '#4A0020', color: 'rgb(74,0,32)' },
+      { name: 'Dark Plum Shine', hex: '#4B1F3A', color: 'rgb(75,31,58)' },
+      { name: 'Midnight Cherry', hex: '#5C0A1E', color: 'rgb(92,10,30)' },
+      { name: 'Black Cherry Gloss', hex: '#3D0C17', color: 'rgb(61,12,23)' },
+      { name: 'Oxblood Lacquer', hex: '#800020', color: 'rgb(128,0,32)' },
     ],
     office: [
-      { name: 'Nude Shine', hex: '#C8A68C', color: 'rgb(200,166,140)' },
-      { name: 'Rose Sheen', hex: '#B76E79', color: 'rgb(183,110,121)' },
-      { name: 'Beige Glow', hex: '#D6B48C', color: 'rgb(214,180,140)' },
-      { name: 'Pink Latte', hex: '#D9A5A0', color: 'rgb(217,165,160)' },
-      { name: 'Mocha Shine', hex: '#9C6B52', color: 'rgb(156,107,82)' },
-      { name: 'Soft Coral', hex: '#F0957E', color: 'rgb(240,149,126)' },
+      { name: 'Dusty Rose Red', hex: '#B05070', color: 'rgb(176,80,112)' },
+      { name: 'Muted Cranberry', hex: '#A0404A', color: 'rgb(160,64,74)' },
+      { name: 'Soft Crimson', hex: '#C0505A', color: 'rgb(192,80,90)' },
+      { name: 'Rose Berry', hex: '#9A3050', color: 'rgb(154,48,80)' },
+      { name: 'Antique Rose', hex: '#B06070', color: 'rgb(176,96,112)' },
+      { name: 'Blush Red', hex: '#C06070', color: 'rgb(192,96,112)' },
     ],
     wedding: [
       { name: 'Bridal Shine', hex: '#E9A6B0', color: 'rgb(233,166,176)' },
@@ -715,9 +768,14 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     [activeCartridges],
   );
 
+  const cartridgeHexMap = useMemo(
+    () => new Map(activeCartridges.map((cartridge) => [cartridge.id, cartridge.hex])),
+    [activeCartridges],
+  );
+
   const intensityAdjustedSelectedMix = useMemo(
-    () => applyIntensityToMix(selectedLipstick.mix, lipstickOpacity),
-    [selectedLipstick.mix, lipstickOpacity],
+    () => applyIntensityToMix(selectedLipstick.mix, lipstickOpacity, cartridgeHexMap),
+    [selectedLipstick.mix, lipstickOpacity, cartridgeHexMap],
   );
 
   const replenishmentPlan = useMemo(() => {
@@ -734,13 +792,16 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
   const proposedShadeLinks = useMemo(() => {
     return proposedLipstickShades.map((shade, index) => {
-      const sortedMix = [...shade.mix]
+      const sortedMix = applyIntensityToMix(
+        [...shade.mix]
         .sort((left, right) => right.percentage - left.percentage)
-        .slice(0, 3)
-        .map((mixItem) => ({
-          name: cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId,
-          percentage: applyIntensityToPercentage(mixItem.percentage, lipstickOpacity),
-        }));
+        .slice(0, 3),
+        lipstickOpacity,
+        cartridgeHexMap,
+      ).map((mixItem) => ({
+        name: cartridgeNameMap.get(mixItem.cartridgeId) || mixItem.cartridgeId,
+        percentage: mixItem.percentage,
+      }));
 
       const rank = index === 0 ? 'Top match' : index === 1 ? 'Strong match' : 'Alternative';
       const formulaText = sortedMix.length > 0
@@ -754,7 +815,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
         formulaText,
       };
     });
-  }, [proposedLipstickShades, cartridgeNameMap, lipstickOpacity]);
+  }, [proposedLipstickShades, cartridgeNameMap, lipstickOpacity, cartridgeHexMap]);
 
   const expectedWearProfile = useMemo(() => {
     const baseHours = finish === 'matte' ? 8 : 6;
@@ -1420,7 +1481,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     // If in-house, send command to device to dispense blend from cartridges
     if (experienceType === 'in-house') {
       try {
-        const intensityAdjustedMix = applyIntensityToMix(lipstick.mix, lipstickOpacity);
+        const intensityAdjustedMix = applyIntensityToMix(lipstick.mix, lipstickOpacity, cartridgeHexMap);
         await apiFetch('/device/dispense', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1504,24 +1565,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
           ✕
         </button>
 
-        <div className="w-full pr-14 sm:pr-0 lg:absolute lg:top-6 lg:left-6 lg:z-10 lg:w-auto lg:pr-0">
-          <div className="flex flex-col gap-1 sm:gap-2">
-            <div className="inline-flex w-auto items-center gap-2 self-start rounded-full border border-[#bfa77a] bg-white/90 px-3 py-1 text-xs">
-              <span className="font-semibold text-[#6d4c1e]">Live tone:</span>
-              <span className="font-bold text-[#bfa77a] capitalize">{effectiveSkinTone}</span>
-              {isCartridgeSelectionMode && (
-                <span className="rounded-full border border-[#d4af37] bg-[#fffbe6] px-2 py-0.5 font-semibold text-[#6d4c1e]">
-                  Refill Mode
-                </span>
-              )}
-            </div>
-            <div className="inline-flex w-auto items-center gap-2 self-start rounded-full border border-[#d9c6a4] bg-white/90 px-3 py-1 text-xs">
-              <span className="font-semibold text-[#6d4c1e]">Region detected:</span>
-              <span className="font-bold text-[#bfa77a]">{regionDisplayLabel[recommendationRegion]}</span>
-              <span className="text-[#6d4c1e]/70">({regionContext.locale})</span>
-            </div>
-          </div>
-        </div>
+
 
         <div className="lg:hidden w-full">
           <div className="mb-1 flex flex-col sm:flex-row sm:justify-center sm:items-center items-start gap-2">
@@ -1543,6 +1587,24 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
         {/* Left Section - Camera OR Processed Image */}
         <div className="flex-1 flex flex-col items-center">
+          {/* Status Badges */}
+          <div className="w-full max-w-md mb-3 flex flex-wrap gap-2 pr-12 sm:pr-0">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#bfa77a] bg-white/90 px-3 py-1 text-xs">
+              <span className="font-semibold text-[#6d4c1e]">Live tone:</span>
+              <span className="font-bold text-[#bfa77a] capitalize">{effectiveSkinTone}</span>
+              {isCartridgeSelectionMode && (
+                <span className="rounded-full border border-[#d4af37] bg-[#fffbe6] px-2 py-0.5 font-semibold text-[#6d4c1e]">
+                  Refill Mode
+                </span>
+              )}
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#d9c6a4] bg-white/90 px-3 py-1 text-xs">
+              <span className="font-semibold text-[#6d4c1e]">Region detected:</span>
+              <span className="font-bold text-[#bfa77a]">{regionDisplayLabel[recommendationRegion]}</span>
+              <span className="text-[#6d4c1e]/70">({regionContext.locale})</span>
+            </div>
+          </div>
+
           <div className="relative w-full max-w-md mx-auto luxury-border overflow-hidden rounded-2xl">
             {/* Optional brand logo badge (place your logo at /assets/brand-logo.svg) */}
             <div className="pointer-events-none absolute top-2 left-2 z-10">
@@ -1655,7 +1717,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   {isProcessing ? (
                     <div className="flex flex-col items-center justify-center h-64 bg-gray-100 rounded-lg">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#bfa77a] mb-3"></div>
-                      <div className="text-[#bfa77a]">Detecting lips and applying color...</div>
+                      <div className="text-[#bfa77a]">Crafting your lip signature with luxury detail...</div>
                     </div>
                   ) : (
                     <img
@@ -1719,9 +1781,11 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                 highlightCartridgeIds={
                   experienceType === 'in-house'
                     ? activeInhouseSet.cartridges.map((c) => c.id)
-                    : selectedLipstick.mix.map((mixItem) => mixItem.cartridgeId)
+                    : intensityAdjustedSelectedMix
+                        .filter((mixItem) => mixItem.percentage > 0)
+                        .map((mixItem) => mixItem.cartridgeId)
                 }
-                mixBreakdown={selectedLipstick.mix.map((mixItem) => ({
+                mixBreakdown={intensityAdjustedSelectedMix.map((mixItem) => ({
                   cartridgeId: mixItem.cartridgeId,
                   percentage: mixItem.percentage,
                 }))}
@@ -1937,13 +2001,13 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   <span className="font-semibold text-[#6d4c1e]">AI detected:</span> {effectiveSkinTone} skin tone · {selectedOccasion} occasion · {finish} finish. Shades ranked by undertone harmony and luma proximity.
                 </div>
                 {/* Color Grid */}
-                <div className="w-full flex flex-wrap justify-center gap-3 sm:gap-4 mb-8">
+                <div className="w-full grid grid-cols-2 gap-3 sm:gap-4 mb-8">
                   {proposedLipstickShades.map((lipstick) => (
                     <button
                       key={lipstick.name}
                       onClick={() => handleLipstickSelect(lipstick)}
                       disabled={isProcessing}
-                      className={`relative w-[108px] sm:w-[116px] flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] ${
+                      className={`relative w-full flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] ${
                         selectedLipstick.hex === lipstick.hex
                           ? 'border-[#bfa16a] bg-white shadow-lg -translate-y-0.5'
                           : 'border-[#d4af37] bg-white/70 hover:bg-white'

@@ -146,8 +146,8 @@ def _collect_health_payload() -> Dict[str, Any]:
 def _render_health_html(payload: Dict[str, Any]) -> str:
         diagnostics = payload.get("diagnostics", {})
         versions = diagnostics.get("versions", {}) if isinstance(diagnostics.get("versions", {}), dict) else {}
-    home_href = f"{FRONTEND_NAV_URL}/home" if FRONTEND_NAV_URL else "/"
-    try_on_href = f"{FRONTEND_NAV_URL}/try-on" if FRONTEND_NAV_URL else "/try-on"
+        home_href = f"{FRONTEND_NAV_URL}/home" if FRONTEND_NAV_URL else "/"
+        try_on_href = f"{FRONTEND_NAV_URL}/try-on" if FRONTEND_NAV_URL else "/try-on"
 
         def _ok_badge(ok: bool) -> str:
                 color = "#137333" if ok else "#c62828"
