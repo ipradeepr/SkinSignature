@@ -1448,6 +1448,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     const defaultFinish: 'matte' | 'glossy' = 'matte';
     const defaultLipstick = activeLipstickShades[0] || selectedLipstick;
 
+    lastApplyKeyRef.current = ''; // clear dedup key so retake always reprocesses
     setCapturedImage(null);
     setHasCapturedMonogramPortrait(false);
     setProcessedImage(null);
@@ -1587,40 +1588,26 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
         {/* Left Section - Camera OR Processed Image */}
         <div className="flex-1 flex flex-col items-center">
-          {/* Status Badges */}
-          <div className="w-full max-w-md mb-3 flex flex-wrap gap-2 pr-12 sm:pr-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#bfa77a] bg-white/90 px-3 py-1 text-xs">
-              <span className="font-semibold text-[#6d4c1e]">Live tone:</span>
-              <span className="font-bold text-[#bfa77a] capitalize">{effectiveSkinTone}</span>
-              {isCartridgeSelectionMode && (
-                <span className="rounded-full border border-[#d4af37] bg-[#fffbe6] px-2 py-0.5 font-semibold text-[#6d4c1e]">
-                  Refill Mode
-                </span>
-              )}
-            </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#d9c6a4] bg-white/90 px-3 py-1 text-xs">
-              <span className="font-semibold text-[#6d4c1e]">Region detected:</span>
-              <span className="font-bold text-[#bfa77a]">{regionDisplayLabel[recommendationRegion]}</span>
-              <span className="text-[#6d4c1e]/70">({regionContext.locale})</span>
-            </div>
-          </div>
-
-          <div className="relative w-full max-w-md mx-auto luxury-border overflow-hidden rounded-2xl">
-            {/* Optional brand logo badge (place your logo at /assets/brand-logo.svg) */}
-            <div className="pointer-events-none absolute top-2 left-2 z-10">
-              <img
-                src="/assets/brand-logo.svg"
-                alt="Brand Logo"
-                className="h-8 w-8 object-contain drop-shadow-md rounded-full border border-[#d4af37] bg-white/90"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-              />
-            </div>
-
-            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-2">
-                <label className="text-sm font-semibold text-[#6d4c1e]">Lighting</label>
+          {/* Status Badges + Lighting toggle — single responsive header row */}
+          <div className="w-full max-w-md mb-3 pr-12 sm:pr-0">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              {/* Left: info badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#bfa77a] bg-white/90 px-3 py-1 text-xs">
+                  <span className="font-semibold text-[#6d4c1e]">Live tone:</span>
+                  <span className="font-bold text-[#bfa77a] capitalize">{effectiveSkinTone}</span>
+                  {isCartridgeSelectionMode && (
+                    <span className="rounded-full border border-[#d4af37] bg-[#fffbe6] px-2 py-0.5 font-semibold text-[#6d4c1e]">Refill Mode</span>
+                  )}
+                </div>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#d9c6a4] bg-white/90 px-3 py-1 text-xs">
+                  <span className="font-semibold text-[#6d4c1e]">Region:</span>
+                  <span className="font-bold text-[#bfa77a]">{regionDisplayLabel[recommendationRegion]}</span>
+                  <span className="hidden sm:inline text-[#6d4c1e]/60">({regionContext.locale})</span>
+                </div>
               </div>
-              <div className="inline-flex rounded-full border border-[#d9c6a4] overflow-hidden self-start sm:self-auto">
+              {/* Right: Lighting toggle */}
+              <div className="inline-flex rounded-full border border-[#d9c6a4] overflow-hidden shrink-0">
                 <button
                   type="button"
                   onClick={() => setLightingMode('day')}
@@ -1637,6 +1624,20 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                 </button>
               </div>
             </div>
+          </div>
+
+          <div className="relative w-full max-w-md mx-auto luxury-border overflow-hidden rounded-2xl">
+            {/* Optional brand logo badge (place your logo at /assets/brand-logo.svg) */}
+            <div className="pointer-events-none absolute top-2 left-2 z-10">
+              <img
+                src="/assets/brand-logo.svg"
+                alt="Brand Logo"
+                className="h-8 w-8 object-contain drop-shadow-md rounded-full border border-[#d4af37] bg-white/90"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+            </div>
+
+
             
             {/* Show Camera Feed ONLY when no image captured */}
             {!capturedImage && (
@@ -1718,6 +1719,38 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                     <div className="flex flex-col items-center justify-center h-64 bg-gray-100 rounded-lg">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#bfa77a] mb-3"></div>
                       <div className="text-[#bfa77a]">Crafting your lip signature with luxury detail...</div>
+                    </div>
+                  ) : !processedImage && capturedImage ? (
+                    <div className="relative">
+                      <img
+                        src={capturedImage}
+                        alt="Captured — awaiting processing"
+                        className="w-full h-auto rounded-lg shadow-md opacity-70"
+                      />
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 rounded-lg gap-3">
+                        <p className="text-white text-sm font-semibold text-center px-4">
+                          {errorMessage || 'Backend is waking up — processing not completed.'}
+                        </p>
+                        <button
+                          onClick={() => {
+                            lastApplyKeyRef.current = '';
+                            applyLipstickWithBackend(capturedImage, selectedLipstick.hex, lipstickOpacity).then((result) => {
+                              if (result && result.lip_detected !== false) {
+                                setLipBackendAnalysis(result);
+                                const proposals = deriveLipstickProposals(activeLipstickShades, result, effectiveSkinTone, selectedOccasion, finish);
+                                const limited = limitCommonLuxuryLipstickShades(proposals, selectedOccasion, recommendationRegion, experienceType === 'store' || launchMode === 'cartridge');
+                                setProposedLipstickShades(limited);
+                                const def = pickDefaultLipstickByOccasion(limited);
+                                if (def) setSelectedLipstick(def);
+                                setAnalysisReady(limited.length > 0);
+                              }
+                            });
+                          }}
+                          className="px-4 py-2 rounded-lg bg-[#d4af37] text-white text-sm font-semibold hover:bg-[#bfa77a] lux-cta-transition"
+                        >
+                          ↺ Retry Processing
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <img
