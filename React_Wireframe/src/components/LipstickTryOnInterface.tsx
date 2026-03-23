@@ -1347,6 +1347,29 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     }
   };
 
+  const retryProcessingCapturedImage = async () => {
+    if (!capturedImage) return;
+    lastApplyKeyRef.current = '';
+    setErrorMessage('');
+    const result = await applyLipstickWithBackend(capturedImage, selectedLipstick.hex, lipstickOpacity);
+    if (result && result.lip_detected !== false) {
+      setLipBackendAnalysis(result);
+      const proposals = deriveLipstickProposals(activeLipstickShades, result, effectiveSkinTone, selectedOccasion, finish);
+      const limited = limitCommonLuxuryLipstickShades(
+        proposals,
+        selectedOccasion,
+        recommendationRegion,
+        experienceType === 'store' || launchMode === 'cartridge',
+      );
+      setProposedLipstickShades(limited);
+      const defaultShade = pickDefaultLipstickByOccasion(limited);
+      if (defaultShade) {
+        setSelectedLipstick(defaultShade);
+      }
+      setAnalysisReady(limited.length > 0);
+    }
+  };
+
   // Capture snapshot and apply lipstick
   const captureSnapshot = async () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -1468,13 +1491,9 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     setIsProposalLoading(false);
   };
 
-  // Retake photo - properly reset all states
+  // Retake photo - keep user context (occasion/finish/lighting) for smoother UX
   const handleRetake = () => {
-    const defaultOccasion = occasionOptions[0].value;
-    const defaultFinish: 'matte' | 'glossy' = 'matte';
-    const defaultLipstick = activeLipstickShades[0] || selectedLipstick;
-
-    lastApplyKeyRef.current = ''; // clear dedup key so retake always reprocesses
+    lastApplyKeyRef.current = '';
     setCapturedImage(null);
     setHasCapturedMonogramPortrait(false);
     setProcessedImage(null);
@@ -1482,18 +1501,10 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     setErrorMessage('');
     setConfidence(0);
     setIsProcessing(false);
-    setSelectedOccasion(defaultOccasion);
-    setFinish(defaultFinish);
-    setLightingMode('day');
-    setSelectedLipstick(defaultLipstick);
-    setLipstickOpacity(70);
-    setZoomTarget(1);
-    setZoom(1);
     setProposedLipstickShades([]);
     setAnalysisReady(false);
     setIsProposalLoading(false);
     setLipBackendAnalysis(null);
-    startCamera();
   };
 
   // Update when lipstick or opacity changes (only if image is captured)
@@ -1755,27 +1766,22 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                       />
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 rounded-lg gap-3">
                         <p className="text-white text-sm font-semibold text-center px-4">
-                          {errorMessage || 'Backend is waking up — processing not completed.'}
+                          {errorMessage || 'Processing was not completed yet.'}
                         </p>
-                        <button
-                          onClick={() => {
-                            lastApplyKeyRef.current = '';
-                            applyLipstickWithBackend(capturedImage, selectedLipstick.hex, lipstickOpacity).then((result) => {
-                              if (result && result.lip_detected !== false) {
-                                setLipBackendAnalysis(result);
-                                const proposals = deriveLipstickProposals(activeLipstickShades, result, effectiveSkinTone, selectedOccasion, finish);
-                                const limited = limitCommonLuxuryLipstickShades(proposals, selectedOccasion, recommendationRegion, experienceType === 'store' || launchMode === 'cartridge');
-                                setProposedLipstickShades(limited);
-                                const def = pickDefaultLipstickByOccasion(limited);
-                                if (def) setSelectedLipstick(def);
-                                setAnalysisReady(limited.length > 0);
-                              }
-                            });
-                          }}
-                          className="px-4 py-2 rounded-lg bg-[#d4af37] text-white text-sm font-semibold hover:bg-[#bfa77a] lux-cta-transition"
-                        >
-                          ↺ Retry Processing
-                        </button>
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          <button
+                            onClick={handleRetake}
+                            className="px-4 py-2 rounded-lg bg-[#d4af37] text-white text-sm font-semibold hover:bg-[#bfa77a] lux-cta-transition"
+                          >
+                            📷 Retake Photo
+                          </button>
+                          <button
+                            onClick={retryProcessingCapturedImage}
+                            className="px-4 py-2 rounded-lg border border-[#d4af37] bg-white/90 text-[#5b4632] text-sm font-semibold hover:bg-[#f7f2ea] lux-cta-transition"
+                          >
+                            ↺ Retry Processing
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ) : (
