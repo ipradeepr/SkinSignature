@@ -420,6 +420,11 @@ async def health():
         return _collect_health_payload()
 
 
+@app.get("/v1/ping")
+async def ping():
+    return {"status": "ok"}
+
+
 @app.get("/v1/health/view", response_class=HTMLResponse)
 async def health_view():
         payload = _collect_health_payload()

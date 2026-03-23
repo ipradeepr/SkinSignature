@@ -8,6 +8,7 @@ import ProductDetails from './ProductDetails';
 import Header from './Header';
 import FoundationTryOnInterface from './FoundationTryOnInterface';
 import LipstickTryOnInterface from './LipstickTryOnInterface';
+import { apiFetch } from '../config/api';
 
 type FoundationSwatch = {
   id: number;
@@ -68,6 +69,12 @@ const extractToneSignal = (payload: any): SkinToneSignal | null => {
   return null;
 };
 
+const BACKEND_WAKEUP_ATTEMPT_KEY = 'ss-backend-wakeup-attempt-ts';
+const BACKEND_WAKEUP_SUCCESS_KEY = 'ss-backend-wakeup-success-ts';
+const BACKEND_WAKEUP_SUCCESS_COOLDOWN_MS = 10 * 60 * 1000;
+const BACKEND_WAKEUP_FAILURE_COOLDOWN_MS = 2 * 60 * 1000;
+const BACKEND_WAKEUP_TIMEOUT_MS = 6000;
+
 const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launchMode?: 'store' | 'cartridge' | 'in-house'; onNavigateHome?: () => void }> = ({ experienceType = 'store', launchMode = 'store', onNavigateHome }) => {
   // --- Camera and View State ---
   const { cameraActive, videoRef, canvasRef, overlayCanvasRef, startCamera, stopCamera, streamRef } = useCamera();
@@ -109,6 +116,7 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
   const [liveSkinTone, setLiveSkinTone] = useState<SkinToneProfile | null>(null);
   const [liveToneConfidence, setLiveToneConfidence] = useState<number>(0);
   const toneHistoryRef = useRef<SkinToneProfile[]>([]);
+  const wakeupInFlightRef = useRef(false);
 
   const fallbackSkinTone = useMemo<SkinToneProfile>(() => {
     const signal =
@@ -119,6 +127,57 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
   }, [realTimeData, analysisResult, selectedFoundation]);
 
   const inferredSkinTone = liveSkinTone || fallbackSkinTone;
+
+  const warmupBackend = useCallback(async () => {
+    if (typeof window === 'undefined' || wakeupInFlightRef.current) return;
+
+    const now = Date.now();
+    const lastAttempt = Number(window.localStorage.getItem(BACKEND_WAKEUP_ATTEMPT_KEY) || 0);
+    const lastSuccess = Number(window.localStorage.getItem(BACKEND_WAKEUP_SUCCESS_KEY) || 0);
+    const successCooldownActive = lastSuccess > 0 && now - lastSuccess < BACKEND_WAKEUP_SUCCESS_COOLDOWN_MS;
+    const failureCooldownActive = lastAttempt > 0 && now - lastAttempt < BACKEND_WAKEUP_FAILURE_COOLDOWN_MS;
+
+    if (successCooldownActive || failureCooldownActive) return;
+
+    const attemptWakeup = async (): Promise<boolean> => {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), BACKEND_WAKEUP_TIMEOUT_MS);
+      try {
+        const response = await apiFetch('/v1/ping', {
+          method: 'GET',
+          cache: 'no-store',
+          signal: controller.signal,
+          headers: { 'x-wakeup': '1' },
+        });
+        return response.ok;
+      } catch {
+        return false;
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    };
+
+    wakeupInFlightRef.current = true;
+    window.localStorage.setItem(BACKEND_WAKEUP_ATTEMPT_KEY, String(now));
+
+    try {
+      const firstTrySuccess = await attemptWakeup();
+      if (firstTrySuccess) {
+        window.localStorage.setItem(BACKEND_WAKEUP_SUCCESS_KEY, String(Date.now()));
+        return;
+      }
+
+      await new Promise((resolve) => window.setTimeout(resolve, 2500));
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        const secondTrySuccess = await attemptWakeup();
+        if (secondTrySuccess) {
+          window.localStorage.setItem(BACKEND_WAKEUP_SUCCESS_KEY, String(Date.now()));
+        }
+      }
+    } finally {
+      wakeupInFlightRef.current = false;
+    }
+  }, []);
 
   // --- Handlers ---
   const handleStartCamera = async (_experience: 'store' | 'in-house') => {
@@ -169,6 +228,24 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
     setCurrentView('home');
     onNavigateHome?.();
   };
+
+  useEffect(() => {
+    if (currentView !== 'home') return;
+    warmupBackend();
+  }, [currentView, warmupBackend]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && currentView === 'home') {
+        warmupBackend();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [currentView, warmupBackend]);
 
   useEffect(() => {
     if (realTimeData && realTimeData.skin_tone_data) {

@@ -48,6 +48,8 @@ const Header: React.FC<HeaderProps> = ({ cartItems, onHomeClick }) => {
                 type="button"
                 onClick={checkStatus}
                 disabled={isChecking}
+                title="Quick ping check (lightweight). Opens full diagnostics separately."
+                aria-label="Quick backend ping status check"
                 className={`inline-flex items-center px-2 py-1 rounded-full text-[0.6rem] sm:text-[0.65rem] font-semibold border lux-cta-transition max-w-[140px] sm:max-w-none truncate ${backend === 'online' ? 'border-green-500 text-green-400' : backend === 'offline' ? 'border-red-500 text-red-400' : 'border-yellow-500 text-yellow-400'}`}
               >
                 {isChecking
