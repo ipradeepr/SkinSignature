@@ -207,6 +207,7 @@ function deriveLipstickProposals(
   const redTokens = ['red', 'rouge', 'scarlet', 'crimson', 'cherry', 'ruby'];
   const isOffice = occasion === 'office';
 
+  const maxShades = preferRedFamily ? 4 : 6;
   return [...shades]
     .sort((left, right) => {
       const leftLuma = toneLuma(left.hex);
@@ -234,7 +235,7 @@ function deriveLipstickProposals(
 
       return leftScore - rightScore;
     })
-    .slice(0, Math.min(6, shades.length));
+    .slice(0, Math.min(maxShades, shades.length));
 }
 
 type RegionKey = 'global' | 'americas' | 'emea' | 'apac';
@@ -283,6 +284,46 @@ function detectRegionFromLocale(): RegionKey {
   return 'global';
 }
 
+function scoreRedLeaningLipstick(shade: MixedLipstick): number {
+  const { r, g, b } = hexToRgb(shade.hex);
+  const redLead = r - Math.max(g, b);
+  const warmRedLift = r - ((g + b) / 2);
+  const depthBonus = (255 - toneLuma(shade.hex)) * 0.12;
+  const name = shade.name.toLowerCase();
+  const tokenBonus = ['red', 'rouge', 'scarlet', 'crimson', 'cherry', 'ruby', 'berry', 'brick', 'coral']
+    .some((token) => name.includes(token))
+    ? 18
+    : 0;
+
+  return redLead * 1.2 + warmRedLift * 0.9 + depthBonus + tokenBonus;
+}
+
+function selectInhouseLipstickShades(shades: MixedLipstick[], occasion: string): MixedLipstick[] {
+  if (shades.length === 0) return [];
+
+  const ranked = [...shades].sort((left, right) => {
+    const redPriority = scoreRedLeaningLipstick(right) - scoreRedLeaningLipstick(left);
+    if (Math.abs(redPriority) > 0.001) return redPriority;
+    return toneLuma(left.hex) - toneLuma(right.hex);
+  });
+
+  if (occasion !== 'office') {
+    return ranked.slice(0, Math.min(4, ranked.length));
+  }
+
+  const lighterThreshold = 142;
+  const darkerRanked = ranked.filter((shade) => toneLuma(shade.hex) < lighterThreshold);
+  const lighterRanked = ranked.filter((shade) => toneLuma(shade.hex) >= lighterThreshold);
+
+  const picks: MixedLipstick[] = [...darkerRanked.slice(0, 3)];
+  if (lighterRanked[0]) picks.push(lighterRanked[0]);
+
+  const selectedHexes = new Set(picks.map((shade) => shade.hex.toLowerCase()));
+  const remaining = ranked.filter((shade) => !selectedHexes.has(shade.hex.toLowerCase()));
+
+  return [...picks, ...remaining].slice(0, Math.min(4, ranked.length));
+}
+
 const commonLuxuryLipstickByOccasion: Record<RegionKey, Record<string, string[]>> = {
   global: {
     casual: ['Rouge Allure', 'Scarlet Kiss', 'Midnight Plum', 'Terracotta Brick'],
@@ -312,8 +353,11 @@ function limitCommonLuxuryLipstickShades(
   region: RegionKey,
   shouldLimit: boolean,
 ): MixedLipstick[] {
-  let baseList = shades;
+  if (!shouldLimit) {
+    return selectInhouseLipstickShades(shades, occasion);
+  }
 
+  let baseList = shades;
   if (shouldLimit) {
     const preferredNames =
       commonLuxuryLipstickByOccasion[region]?.[occasion] ||

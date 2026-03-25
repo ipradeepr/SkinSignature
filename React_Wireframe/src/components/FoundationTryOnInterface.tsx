@@ -259,7 +259,7 @@ function limitCommonLuxuryFoundationShades(
   region: RegionKey,
   shouldLimit: boolean,
 ): FoundationShade[] {
-  if (!shouldLimit) return shades;
+  if (!shouldLimit) return shades.slice(0, Math.min(4, shades.length));
 
   const preferredNames =
     commonLuxuryFoundationByOccasion[region]?.[occasion] ||
@@ -288,6 +288,7 @@ function deriveOccasionAwareShades(
   shades: FoundationShade[],
   analysis: FoundationAnalysisPayload,
   occasion: string,
+  experienceType: 'store' | 'in-house' = 'store',
 ): FoundationShade[] {
   if (shades.length === 0) return [];
 
@@ -317,9 +318,10 @@ function deriveOccasionAwareShades(
     return lumaDelta + nameBonus;
   };
 
+  const maxShades = experienceType === 'in-house' ? 4 : 6;
   return [...shades]
     .sort((left, right) => scoreShade(left) - scoreShade(right))
-    .slice(0, Math.min(6, shades.length));
+    .slice(0, Math.min(maxShades, shades.length));
 }
 
 function coerceScore(value: unknown, fallback = 0): number {
@@ -741,7 +743,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
         ? buildStoreShades(storeShadeRecipes)
         : buildInhouseShades(activeInhouseSet);
       const toneAdapted = adaptFoundationShadesForTone(baseShades, analyzedTone);
-      const occasionShades = deriveOccasionAwareShades(toneAdapted, analysis, selectedOccasion);
+      const occasionShades = deriveOccasionAwareShades(toneAdapted, analysis, selectedOccasion, experienceType);
       const sanitizedOccasionShades = sanitizeFoundationShadeNames(occasionShades);
       const limitedOccasionShades = limitCommonLuxuryFoundationShades(
         sanitizedOccasionShades,
@@ -1091,7 +1093,7 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
       ? buildStoreShades(storeShadeRecipes)
       : buildInhouseShades(activeInhouseSet);
     const toneAdapted = adaptFoundationShadesForTone(baseShades, analyzedTone);
-    const occasionShades = deriveOccasionAwareShades(toneAdapted, analysisPayload, selectedOccasion);
+    const occasionShades = deriveOccasionAwareShades(toneAdapted, analysisPayload, selectedOccasion, experienceType);
     const sanitizedOccasionShades = sanitizeFoundationShadeNames(occasionShades);
     const limitedOccasionShades = limitCommonLuxuryFoundationShades(
       sanitizedOccasionShades,
