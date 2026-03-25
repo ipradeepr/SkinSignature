@@ -184,6 +184,7 @@ function deriveLipstickProposals(
   skintone: SkinToneProfile,
   occasion: string,
   finish: 'matte' | 'glossy',
+  preferRedFamily = false,
 ): MixedLipstick[] {
   if (shades.length === 0) return [];
 
@@ -224,6 +225,11 @@ function deriveLipstickProposals(
         if (rightLuma > 138) rightScore += 8;
         if (leftIsRed) leftScore -= 7;
         if (rightIsRed) rightScore -= 7;
+      }
+
+      if (preferRedFamily) {
+        if (leftIsRed) leftScore -= 12;
+        if (rightIsRed) rightScore -= 12;
       }
 
       return leftScore - rightScore;
@@ -487,7 +493,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     }),
     [recommendationRegion],
   );
-  const [selectedInhouseSetId, setSelectedInhouseSetId] = useState<'set-a' | 'set-b'>('set-a');
+  const [selectedInhouseSetId, setSelectedInhouseSetId] = useState<'set-a' | 'set-b'>('set-b');
   const [detectedSkinTone, setDetectedSkinTone] = useState<SkinToneProfile>(normalizeSkinTone(skintone));
   // OMS/store and in-house palettes (available as base sets)
   const storeLipstickPalettes: Record<string, Lipstick[]> = {
@@ -1354,7 +1360,14 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     const result = await applyLipstickWithBackend(capturedImage, selectedLipstick.hex, lipstickOpacity);
     if (result && result.lip_detected !== false) {
       setLipBackendAnalysis(result);
-      const proposals = deriveLipstickProposals(activeLipstickShades, result, effectiveSkinTone, selectedOccasion, finish);
+      const proposals = deriveLipstickProposals(
+        activeLipstickShades,
+        result,
+        effectiveSkinTone,
+        selectedOccasion,
+        finish,
+        experienceType === 'in-house',
+      );
       const limited = limitCommonLuxuryLipstickShades(
         proposals,
         selectedOccasion,
@@ -1475,6 +1488,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
       effectiveSkinTone,
       selectedOccasion,
       finish,
+      experienceType === 'in-house',
     );
     const limitedOccasionProposals = limitCommonLuxuryLipstickShades(
       occasionProposals,
@@ -1571,6 +1585,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
       effectiveSkinTone,
       selectedOccasion,
       finish,
+      experienceType === 'in-house',
     );
     const limitedOccasionProposals = limitCommonLuxuryLipstickShades(
       occasionProposals,
@@ -1925,21 +1940,6 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
           {showProposedShadesSection && (
             <>
-              {/* Selected Color Info */}
-              <div className="mt-4 w-full max-w-md mx-auto text-center">
-                <div className="lux-card rounded-xl px-6 py-4 lux-smooth-panel" key={`lip-selected-${selectedLipstick.hex}-${finish}`}>
-                  <div className="font-bold text-lg text-[#6d4c1e] mb-2">Selected Shade</div>
-                  <div className="flex items-center justify-center gap-3">
-                    <div 
-                      className="w-8 h-8 rounded-full border-2 border-[#bfa77a]"
-                      style={{ backgroundColor: selectedLipstick.color }}
-                    ></div>
-                    <span className="font-semibold text-[#bfa77a]">{selectedLipstick.name} · {finish === 'matte' ? 'Matte' : 'Glossy'}</span>
-                  </div>
-                  <div className="text-sm text-[#6d4c1e] mt-1">{selectedLipstick.hex}</div>
-                </div>
-              </div>
-
               {/* Lip Analysis Data */}
               <div className="mt-4 w-full max-w-md mx-auto">
                 <div className="lux-card rounded-xl px-6 py-4 lux-smooth-panel" key={`lip-analysis-${selectedLipstick.hex}-${selectedOccasion}`}>
@@ -2103,7 +2103,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                   ))}
                 </div>
 
-                <div className="lux-card rounded-xl px-4 py-4 mb-6">
+                <div className="lux-card rounded-xl px-4 py-4 mb-3">
                   <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Shade Formula Links</div>
                   <div className="space-y-2">
                     {proposedShadeLinks.map((item) => (
@@ -2132,21 +2132,8 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
             {showProposedShadesSection && (
               <>
-
-                <div className="lux-card rounded-xl px-6 py-4 mt-2">
-                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Wear Guidance</div>
-                  <div className="space-y-1 text-xs text-[#6d4c1e]">
-                    <div className="flex justify-between">
-                      <span>Longevity</span>
-                      <span className="font-semibold text-[#bfa77a]">{expectedWearProfile.longevity}</span>
-                    </div>
-                    <div>{expectedWearProfile.touchUpWindow}</div>
-                    <div>{expectedWearProfile.bestSetting}</div>
-                  </div>
-                </div>
-
                 {/* Checkout Assistant */}
-                <div className="lux-card rounded-xl px-6 py-4 mt-4">
+                <div className="lux-card rounded-xl px-6 py-4 mt-1">
                   {experienceType === 'in-house' ? (
                     <div className="font-bold text-base text-[#6d4c1e] mb-2">Dispense This Curated Shade</div>
                   ) : (
@@ -2261,7 +2248,6 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
                         <div key={item.cartridgeId} className="flex items-center justify-between gap-2">
                           <span className="truncate">{item.cartridgeName} · {item.priority}</span>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="font-semibold text-[#bfa77a]">{item.etaDays} days</span>
                             <button
                               type="button"
                               onClick={() => addCartridgeToCart(item.cartridgeId, item.percentage)}

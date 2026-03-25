@@ -2187,7 +2187,6 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                       <div key={item.cartridgeId} className="flex items-center justify-between gap-2">
                         <span className="truncate">{item.cartridgeName} · {item.priority}</span>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-semibold text-[#bfa77a]">{item.etaDays} days</span>
                           <button
                             type="button"
                             onClick={() => addCartridgeToCart(item.cartridgeId, item.percentage)}

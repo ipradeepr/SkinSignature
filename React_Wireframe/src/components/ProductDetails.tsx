@@ -38,9 +38,9 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({
         <div>
           <h3 className="text-xl sm:text-2xl font-semibold lux-title mb-3 sm:mb-4">Luxury AI Beauty Intelligence, Now Personalized by Mode</h3>
           <p className="lux-muted leading-relaxed text-sm sm:text-base">
-            Skin Signature now adapts to how you shop and apply beauty: In-Store Experience, In-house Experience, and Refill Cartridges.
+            Skin Signature now adapts to how you shop and apply beauty: In-Store Experience, In-house Experience, and Shade Studio.
             In real time, AI analyzes your live skin signal—tone, undertone, texture, and lighting—to determine your best-match shades,
-            then recommends couture-level foundation and lipstick looks with instantly visualized shade-to-cartridge mapping in Refill Cartridges mode.
+            then recommends couture-level foundation and lipstick looks with instantly visualized shade-to-cartridge mapping in Shade Studio mode.
           </p>
         </div>
         

@@ -196,9 +196,6 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, items, onClose, onRemov
                       {cartridgeNameById[item.cartridge_id] ? ` · ${cartridgeNameById[item.cartridge_id]}` : ''}
                     </p>
                   )}
-                  {item.cartridge_percentage !== undefined && (
-                    <p className="text-xs lux-muted">Mix: {item.cartridge_percentage}%</p>
-                  )}
                   {item.finish && (
                     <p className="text-xs lux-muted capitalize">Finish: {item.finish}</p>
                   )}

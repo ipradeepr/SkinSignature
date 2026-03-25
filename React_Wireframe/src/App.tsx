@@ -129,7 +129,7 @@ function App() {
             </div>
           </button>
 
-          {/* Refill Cartridges */}
+          {/* Shade Studio */}
           <button
             type="button"
             onClick={() => {
@@ -150,14 +150,14 @@ function App() {
                 <span className="text-2xl">🧴</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-semibold mb-3 lux-title">
-                Refill Cartridges
+                Shade Studio
               </h2>
               <p className="text-sm leading-relaxed lux-muted max-w-md">
                 Already have the device? Explore different cartridges, buy the ones you need, and blend unique shades tailored to your style and skin profile.
               </p>
               <div className="mt-5 sm:mt-6">
                 <span className="main-action-btn cta-luxury">
-                  Explore Refill Cartridges
+                  Explore Shade Studio
                 </span>
               </div>
             </div>

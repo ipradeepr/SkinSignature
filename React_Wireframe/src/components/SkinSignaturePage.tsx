@@ -588,7 +588,7 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
               <div className="lux-card rounded-2xl p-6">
                 <h3 className="text-xl font-semibold mb-3 lux-title">
                   {launchMode === 'cartridge'
-                    ? 'Refill Cartridges Mode (Cartridge Blending & Purchase)'
+                    ? 'Shade Studio Mode (Cartridge Blending & Purchase)'
                     : experienceType === 'store'
                       ? 'Boutique AI Try-On (Store Experience)'
                       : 'Personalized AI Try-On (In-house Experience)'}
@@ -616,7 +616,7 @@ const SkinSignaturePage: React.FC<{ experienceType?: 'store' | 'in-house'; launc
                   <div className="p-3 rounded-xl bg-white/80 border border-[#d4af37]/40">
                     <div className="font-semibold lux-title">
                       {launchMode === 'cartridge'
-                        ? 'Refill Cartridges Guide'
+                        ? 'Shade Studio Guide'
                         : experienceType === 'store'
                           ? 'OMS-Curated Shades'
                           : 'Device Cartridge Blends'}
