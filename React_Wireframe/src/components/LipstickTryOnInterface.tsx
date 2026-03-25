@@ -22,8 +22,10 @@ type MixedLipstick = Lipstick & {
   mix: ShadeMix[];
 };
 
+type InhouseSetId = 'set-b' | 'set-c';
+
 type LipstickCartridgeSet = {
-  id: 'set-a' | 'set-b';
+  id: InhouseSetId;
   label: string;
   cartridges: Cartridge[];
 };
@@ -43,21 +45,21 @@ const storeLipstickCartridges: Cartridge[] = [
 
 const inhouseLipstickSets: LipstickCartridgeSet[] = [
   {
-    id: 'set-a',
-    label: 'Nude Rose Blend',
+    id: 'set-b',
+    label: 'Brick Red Trio',
     cartridges: [
-      { id: 'LA', name: 'Nude Base', hex: '#D2A679' },
-      { id: 'LB', name: 'Rose Core', hex: '#C48793' },
-      { id: 'LC', name: 'Deep Plum', hex: '#7B294E' },
+      { id: 'LD', name: 'Brick Tone', hex: '#8B3A3A' },
+      { id: 'LE', name: 'Classic Red', hex: '#C72C48' },
+      { id: 'LF', name: 'Berry Plum', hex: '#7B294E' },
     ],
   },
   {
-    id: 'set-b',
-    label: 'Coral Red Blend',
+    id: 'set-c',
+    label: 'Berry Matte Trio',
     cartridges: [
-      { id: 'LD', name: 'Coral Base', hex: '#FF7F50' },
-      { id: 'LE', name: 'True Red', hex: '#C72C48' },
-      { id: 'LF', name: 'Brick Depth', hex: '#8B3A3A' },
+      { id: 'LG', name: 'Berry Plum', hex: '#7B294E' },
+      { id: 'LH', name: 'Brick Tone', hex: '#8B3A3A' },
+      { id: 'LI', name: 'Deep Wine', hex: '#4B244A' },
     ],
   },
 ];
@@ -70,6 +72,88 @@ const inhouseLipstickRatios = [
   [26, 34, 40],
   [16, 32, 52],
 ];
+
+const inhouseLipstickRatiosBySet: Record<InhouseSetId, number[][]> = {
+  'set-b': [
+    [58, 21, 21],
+    [52, 28, 20],
+    [46, 34, 20],
+    [40, 36, 24],
+    [34, 34, 32],
+    [28, 30, 42],
+  ],
+  'set-c': [
+    [95, 4, 1],
+    [88, 9, 3],
+    [82, 13, 5],
+    [74, 20, 6],
+    [66, 26, 8],
+    [58, 32, 10],
+  ],
+};
+
+const inhouseLipstickOccasionRatiosBySet: Partial<Record<InhouseSetId, Record<string, number[][]>>> = {
+  'set-b': {
+    casual: [
+      [58, 21, 21],
+      [54, 24, 22],
+      [50, 28, 22],
+      [46, 30, 24],
+      [42, 30, 28],
+      [38, 28, 34],
+    ],
+    party: [
+      [44, 40, 16],
+      [38, 46, 16],
+      [34, 50, 16],
+      [30, 52, 18],
+      [26, 48, 26],
+      [22, 44, 34],
+    ],
+    office: [
+      [62, 18, 20],
+      [58, 21, 21],
+      [54, 24, 22],
+      [50, 26, 24],
+      [46, 26, 28],
+      [42, 24, 34],
+    ],
+  },
+  'set-c': {
+    casual: [
+      [95, 4, 1],
+      [90, 8, 2],
+      [84, 12, 4],
+      [78, 16, 6],
+      [72, 22, 6],
+      [66, 26, 8],
+    ],
+    party: [
+      [88, 10, 2],
+      [80, 16, 4],
+      [74, 20, 6],
+      [66, 26, 8],
+      [58, 30, 12],
+      [50, 34, 16],
+    ],
+    office: [
+      [95, 4, 1],
+      [92, 6, 2],
+      [88, 9, 3],
+      [82, 13, 5],
+      [76, 18, 6],
+      [70, 22, 8],
+    ],
+  },
+};
+
+function getInhouseLipstickRatios(setId: InhouseSetId, occasion: string): number[][] {
+  return (
+    inhouseLipstickOccasionRatiosBySet[setId]?.[occasion] ||
+    inhouseLipstickRatiosBySet[setId] ||
+    inhouseLipstickRatios
+  );
+}
 
 function normalizeShadeName(name: string): string {
   return String(name || '')
@@ -162,6 +246,38 @@ function mixHexFromRatios(cartridges: Cartridge[], ratios: number[]): string {
   });
   const toHex = (value: number) => Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, '0');
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function buildInhouseLipstickShades(set: LipstickCartridgeSet, occasion: string): MixedLipstick[] {
+  const ratios = getInhouseLipstickRatios(set.id, occasion);
+  const setNamesByOccasion: Record<InhouseSetId, Record<string, string[]>> = {
+    'set-b': {
+      casual: ['Brick Red', 'Soft Brick Red', 'Warm Brick', 'Classic Brick', 'Red Clay', 'Berry Brick'],
+      party: ['Brick Red', 'Crimson Brick', 'Rouge Brick', 'Ruby Brick', 'Deep Brick Rouge', 'Velvet Brick'],
+      office: ['Brick Red', 'Muted Brick', 'Soft Brick Rose', 'Office Brick', 'Rose Brick', 'Neutral Brick'],
+    },
+    'set-c': {
+      casual: ['Berry Matte', 'Soft Berry Matte', 'Berry Rose', 'Warm Berry', 'Berry Brick', 'Rich Berry'],
+      party: ['Berry Matte', 'Berry Velvet', 'Berry Rouge', 'Plum Berry', 'Deep Berry Wine', 'Noir Berry'],
+      office: ['Berry Matte', 'Muted Berry', 'Soft Plum Berry', 'Neutral Berry', 'Berry Taupe', 'Deep Office Berry'],
+    },
+  };
+
+  return ratios.map((ratio, index) => {
+    const mix = set.cartridges.map((cartridge, cartridgeIndex) => ({
+      cartridgeId: cartridge.id,
+      percentage: ratio[cartridgeIndex],
+    }));
+    const hex = mixHexFromRatios(set.cartridges, ratio);
+    const setSpecificName = setNamesByOccasion[set.id]?.[occasion]?.[index];
+
+    return {
+      name: setSpecificName || `${set.label} ${index < 3 ? `Light ${index + 1}` : `Deep ${index - 2}`}`,
+      hex,
+      color: hex,
+      mix,
+    };
+  });
 }
 
 const occasionOptions = [
@@ -308,7 +424,15 @@ function selectInhouseLipstickShades(shades: MixedLipstick[], occasion: string):
   });
 
   if (occasion !== 'office') {
-    return ranked.slice(0, Math.min(4, ranked.length));
+    const base = ranked.slice(0, Math.min(4, ranked.length));
+    const anchor = ranked.find((shade) => {
+      const shadeName = shade.name.toLowerCase();
+      return shadeName === 'berry matte' || shadeName === 'brick red';
+    });
+    if (anchor && !base.some((shade) => shade.hex.toLowerCase() === anchor.hex.toLowerCase())) {
+      return [anchor, ...base.filter((shade) => shade.hex.toLowerCase() !== anchor.hex.toLowerCase())].slice(0, Math.min(4, ranked.length));
+    }
+    return base;
   }
 
   const lighterThreshold = 142;
@@ -537,7 +661,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
     }),
     [recommendationRegion],
   );
-  const [selectedInhouseSetId, setSelectedInhouseSetId] = useState<'set-a' | 'set-b'>('set-b');
+  const [selectedInhouseSetId, setSelectedInhouseSetId] = useState<InhouseSetId>('set-c');
   const [detectedSkinTone, setDetectedSkinTone] = useState<SkinToneProfile>(normalizeSkinTone(skintone));
   // OMS/store and in-house palettes (available as base sets)
   const storeLipstickPalettes: Record<string, Lipstick[]> = {
@@ -680,20 +804,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
 
   const activeLipstickShades = useMemo((): MixedLipstick[] => {
     if (experienceType === 'in-house') {
-      const generated = inhouseLipstickRatios.map((ratio, index) => {
-        const hex = mixHexFromRatios(activeInhouseSet.cartridges, ratio);
-        const mix = activeInhouseSet.cartridges.map((cartridge, cartridgeIndex) => ({
-          cartridgeId: cartridge.id,
-          percentage: ratio[cartridgeIndex],
-        }));
-        return {
-          name: `${activeInhouseSet.label} ${index < 3 ? `Light ${index + 1}` : `Deep ${index - 2}`}`,
-          hex,
-          color: hex,
-          mix,
-        };
-      });
-      return generated;
+      return buildInhouseLipstickShades(activeInhouseSet, selectedOccasion);
     }
 
     const source = finish === 'matte' ? mattePalettes : glossyPalettes;
@@ -704,7 +815,7 @@ const LipstickTryOnInterface: FC<LipstickTryOnInterfaceProps> = ({ onClose, skin
       name: normalizeShadeName(shade.name),
       mix: inferMixFromShade(shade.hex, activeCartridges),
     }));
-  }, [experienceType, activeInhouseSet, finish, selectedOccasion, basePalettes, effectiveSkinTone, activeCartridges]);
+  }, [experienceType, activeInhouseSet, selectedOccasion, finish, basePalettes, effectiveSkinTone, activeCartridges]);
 
   const fallbackLipstick: MixedLipstick = {
     name: 'Classic Red',
