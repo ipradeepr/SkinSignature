@@ -2208,17 +2208,6 @@ const FoundationTryOnInterface: FC<FoundationTryOnInterfaceProps> = ({ onClose, 
                 </div>
                 )}
 
-                <div className="mt-3 pt-3 border-t border-[#bfa77a]/30">
-                  <div className="font-semibold text-sm text-[#6d4c1e] mb-2">Wear Guidance</div>
-                  <div className="space-y-1 text-xs text-[#6d4c1e]">
-                    <div className="flex justify-between">
-                      <span>Longevity</span>
-                      <span className="font-semibold text-[#bfa77a]">{expectedWearProfile.longevity}</span>
-                    </div>
-                    <div>{expectedWearProfile.touchUpWindow}</div>
-                    <div>{expectedWearProfile.bestSetting}</div>
-                  </div>
-                </div>
               </div>
                 </>
               )}
